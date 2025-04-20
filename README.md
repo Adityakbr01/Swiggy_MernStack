@@ -13,7 +13,7 @@ A high-quality, full-stack food delivery web application inspired by **Swiggy**,
 
 ## 🖥️ Tech Stack
 
-**Frontend:**
+**Frontend:**`
 - Next.js
 - Redux Toolkit
 - Tailwind CSS / shadcnUI
