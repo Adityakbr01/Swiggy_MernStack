@@ -8,6 +8,18 @@
     "jsx": "react-jsx",
     "allowJs": true,
 
+
+    "baseUrl": "./src",
+    "paths": {
+      "@/*": ["*"],
+      "@index": ["index.ts"],
+      "@routes/*": ["routes/*"],
+      "@middlewares/*": ["middlewares/*"],
+      "@controllers/*": ["controllers/*"],
+      "@models/*": ["models/*"],
+      "@utils/*": ["utils/*"],
+      "@config/*": ["config/*"]
+    },
     // Bundler mode
     "moduleResolution": "bundler",
     "allowImportingTsExtensions": true,
@@ -24,5 +36,9 @@
     "noUnusedLocals": false,
     "noUnusedParameters": false,
     "noPropertyAccessFromIndexSignature": false
-  }
+  },
+
+  "include": ["src/**/*", "index.ts"],
+  "exclude": ["node_modules", "dist"]
+
 }
