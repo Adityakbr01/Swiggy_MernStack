@@ -5,6 +5,7 @@ import cookieParser from "cookie-parser";
 import notFound from "./middlewares/notFound";
 import errorHandler from "./middlewares/errorHandler";
 import userRouter from "./routes/userRouter";
+import restaurantRouter from "./routes/restaurantRouter";
 
 const app = express();
 
@@ -59,6 +60,7 @@ app.get("/", (req, res) => {
 
 // API Routes
 app.use("/api/v1/users/", userRouter);  
+app.use("/api/v1/restaurants", restaurantRouter);
 
 
 // Error Handling Middleware
