@@ -4,6 +4,7 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import notFound from "./middlewares/notFound";
 import errorHandler from "./middlewares/errorHandler";
+import userRouter from "./routes/userRouter";
 
 const app = express();
 
@@ -55,6 +56,9 @@ app.use((req, res, next) => {
 app.get("/", (req, res) => {
     res.send("Server is running!");
   });
+
+// API Routes
+app.use("/api/v1/users/", userRouter);  
 
 
 // Error Handling Middleware
