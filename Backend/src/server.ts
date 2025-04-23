@@ -6,6 +6,7 @@ import notFound from "./middlewares/notFound";
 import errorHandler from "./middlewares/errorHandler";
 import userRouter from "./routes/userRouter";
 import restaurantRouter from "./routes/restaurantRouter";
+import orderRouter from "./routes/orderRouter";
 
 const app = express();
 
@@ -61,7 +62,7 @@ app.get("/", (req, res) => {
 // API Routes
 app.use("/api/v1/users/", userRouter);  
 app.use("/api/v1/restaurants", restaurantRouter);
-
+app.use("/api/v1/orders", orderRouter);
 
 // Error Handling Middleware
 app.use(notFound); 
