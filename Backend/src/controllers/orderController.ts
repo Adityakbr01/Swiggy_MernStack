@@ -343,6 +343,11 @@ const eventMap = {
 
 const eventName = eventMap[status as keyof typeof eventMap];  // Extract the correct event name
 
+
+if (status === "accepted") {
+  io.emit("orderAccepted", payload);
+}
+
 // Emit to specific rooms
 io.to(`user_${order.userId}`).emit(eventName, {
   orderId: order._id,
@@ -362,6 +367,7 @@ if (order.riderId) {
     status: status,
   });
 }
+
 
     // 1. User
     io.to(`user_${order.userId}`).emit("orderStatusUpdated", payload);
@@ -387,6 +393,24 @@ if (order.riderId) {
   }
 });
 
+// @desc Get available orders for rider
+// @route GET /api/v1/orders/available
+// @access Private
+export const availableOrders = asyncHandler(async (req, res) => {
+  const orders = await Order.find({ status: "accepted", riderId: null });
+
+  res.status(200).json(
+    orders.map((order) => ({
+      orderId: order._id,
+      status: order.status,
+      restaurantId: order.restaurantId,
+      items: order.items,
+    }))
+  );
+});
+
+
+
 
 // @desc Cancel order
 // @route DELETE /api/v1/orders/:id
@@ -402,6 +426,8 @@ export const cancelOrder = asyncHandler(async (req, res) => {
     throw new Error("Not authorized or order cannot be cancelled");
   }
 });
+
+
 
 
 // @desc Get all orders for a restaurant

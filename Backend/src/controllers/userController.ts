@@ -7,6 +7,7 @@ import { _config } from "@config/_config";
 import { deleteLocalFile, deleteMediaCloudinary } from "@utils/multerConfig";
 import { Result } from "express-validator";
 import { getCache, setCache, deleteCache } from '../utils/redisUtils';
+import Rider from "@/models/riderModel";
 
 
 // @desc    Create a new user
@@ -70,6 +71,14 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
               sameSite: "strict",
               maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
           });
+
+          //rider create
+          if (role === "rider") {
+            console.log(newUser?.address[0]?.location?.coordinates);
+            const rider = await Rider.create({ userId: newUser._id, status: "available", assignedOrders: [],currentLocation: { type: "Point", coordinates: newUser?.address[0]?.location?.coordinates } });
+            await rider.save();
+        }
+
 
         sendSuccessResponse(res, 201, "User registered successfully", { user: newUser, token });
 

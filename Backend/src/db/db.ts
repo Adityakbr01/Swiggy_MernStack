@@ -5,7 +5,7 @@ import { logger } from "@utils/logger";
 
 dotenv.config();
 
-const MONGO_URI = _config.MONGO_URI
+const MONGO_URI = _config.MONGO_URI || 'mongodb://localhost:27017/FoodWebApp';
 
 const connectDB = async () => {
     try {

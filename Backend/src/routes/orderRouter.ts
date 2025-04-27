@@ -7,7 +7,9 @@ import {
   updateOrderStatus, 
   cancelOrder, 
   getRestaurantOrders,
-  getPaidOrders
+  getPaidOrders,
+  
+  availableOrders
 } from "@controllers/orderController";
 import { protect, restrictTo } from "@middlewares/authMiddleware";
 import { orderValidator, parseAddressMiddleware } from "@utils/express_validator";
@@ -27,8 +29,7 @@ orderRouter.post(
 );
 
 // Get all orders for a restaurant (Restaurant owner only)
-
-orderRouter.get("/paidOrders", protect, restrictTo("restaurant"), getPaidOrders);
+orderRouter.get("/paidOrders", protect, restrictTo("restaurant","admin","rider"), getPaidOrders);
 
 
 orderRouter.get(
@@ -44,8 +45,8 @@ orderRouter.delete("/:id", protect, cancelOrder); // Cancel order
 
 // Restaurant/Rider routes
 orderRouter.put("/:id/status", protect, restrictTo("restaurant", "rider"), updateOrderStatus);
+orderRouter.get("/availableOrders", protect, restrictTo("rider"), availableOrders);
 
 export default orderRouter;
-
 
 
