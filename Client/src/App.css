@@ -1,0 +1,25 @@
+
+
+.card {
+  padding: 2em;
+}
+
+.read-the-docs {
+  color: #888;
+}
+/* Ensure sidebar and items are visible */
+aside {
+  display: block !important;
+  min-width: 16rem; /* 256px */
+  background-color: #ffffff;
+  border-right: 1px solid #e5e7eb;
+}
+
+
+/* Ensure sidebar items are visible */
+nav, ul, li, a {
+  opacity: 1 !important;
+  visibility: visible !important;
+  padding: 0.7rem 1rem;
+}
+
