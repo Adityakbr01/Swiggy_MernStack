@@ -399,6 +399,8 @@ if (order.riderId) {
 export const availableOrders = asyncHandler(async (req, res) => {
   const orders = await Order.find({ status: "accepted", riderId: null });
 
+  console.log(orders)
+
   res.status(200).json(
     orders.map((order) => ({
       orderId: order._id,

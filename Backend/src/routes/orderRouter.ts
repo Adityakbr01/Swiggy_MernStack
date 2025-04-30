@@ -28,6 +28,8 @@ orderRouter.post(
   createOrder
 );
 
+
+orderRouter.get("/availableOrders", availableOrders);
 // Get all orders for a restaurant (Restaurant owner only)
 orderRouter.get("/paidOrders", protect, restrictTo("restaurant","admin","rider"), getPaidOrders);
 
@@ -45,7 +47,7 @@ orderRouter.delete("/:id", protect, cancelOrder); // Cancel order
 
 // Restaurant/Rider routes
 orderRouter.put("/:id/status", protect, restrictTo("restaurant", "rider"), updateOrderStatus);
-orderRouter.get("/availableOrders", protect, restrictTo("rider"), availableOrders);
+
 
 export default orderRouter;
 

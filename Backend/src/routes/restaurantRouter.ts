@@ -11,7 +11,9 @@ import {
   deleteRestaurant,
   getMenuItem,
   getNearbyRestaurants,
-  getMenus
+  getMenus,
+  getAllMenus,
+  getDashboardSummary
 } from "@controllers/restaurantController";
 import { protect, restrictTo } from "@middlewares/authMiddleware";
 import { restaurantValidator, menuItemValidator, parseAddressMiddleware } from "@utils/express_validator";
@@ -23,9 +25,12 @@ const restaurantRouter = express.Router();
 // Public routes
 restaurantRouter.get("/nearby", protect, getNearbyRestaurants);
 restaurantRouter.get("/", getRestaurants); // All restaurants list
+restaurantRouter.get("/dashboard/summary", protect, restrictTo("restaurant", "admin"), getDashboardSummary);
+restaurantRouter.get("/menus", protect,restrictTo("admin", "restaurant"), getAllMenus);
 restaurantRouter.get("/:id", getRestaurantById); // Single restaurant details
 
 // Protected routes (restaurant owner only)
+
 restaurantRouter.post(
   "/", 
   protect, 
@@ -82,6 +87,7 @@ restaurantRouter.put(
   updateMenuItem
 );
 restaurantRouter.delete("/:id/menu/:itemId", protect, restrictTo("restaurant"), deleteMenuItem);
+
 
 
 
