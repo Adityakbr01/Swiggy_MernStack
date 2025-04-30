@@ -7,6 +7,8 @@ import {
   acceptOrder,
   updateOrderStatus,
   getAllOrdersForRider,
+  getRiderDashboardSummary,
+  availability,
 } from "@/controllers/riderController";
 import { protect } from "@/middlewares/authMiddleware"; // Placeholder for your auth middleware
 import { logger } from "@/utils/logger"; // Assuming logger utility
@@ -18,6 +20,9 @@ router.use((req, res, next) => {
   logger.info(`Rider route accessed: ${req.method} ${req.originalUrl}`);
   next();
 });
+
+router.get("/dashboard", protect, getRiderDashboardSummary);
+router.patch("/availability", protect, availability);
 
 // Get available riders (restaurant/admin)
 router.get("/available", protect, getAvailableRiders);

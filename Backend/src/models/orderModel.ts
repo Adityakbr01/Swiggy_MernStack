@@ -13,7 +13,7 @@ export interface IOrderItem {
 export interface IOrder extends Document {
   _id: mongoose.Types.ObjectId;
   userId: mongoose.Types.ObjectId;
-  restaurantId: mongoose.Types.ObjectId[];
+  restaurantId: mongoose.Types.ObjectId;
   items: IOrderItem[];
   totalAmount: number;
   deliveryAddress: {
@@ -30,6 +30,7 @@ export interface IOrder extends Document {
   contactNumber: string;
   createdAt: Date;
   updatedAt: Date;
+  deliveryFee: number;
 }
 
 const orderItemSchema = new Schema<IOrderItem>({
@@ -48,7 +49,7 @@ const orderSchema = new Schema<IOrder>(
       required: true,
     },
     restaurantId: {
-      type: [mongoose.Schema.Types.ObjectId],
+      type: mongoose.Schema.Types.ObjectId,
       ref: "Restaurant",
       required: true,
     },

@@ -6,6 +6,9 @@ import { sendErrorResponse, sendSuccessResponse } from "@/utils/responseUtil"; /
 import { logger } from "@/utils/logger"; // Assuming logger utility
 import asyncHandler from "express-async-handler"; // Your asyncHandler
 import type { AuthRequest } from "@/middlewares/authMiddleware";
+import { Types } from "mongoose";
+import User from "@/models/userModel";
+import { format } from "date-fns";
 
 
 
@@ -272,20 +275,296 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
    return
 });
 
+// Controller to fetch rider dashboard summary
+export const getRiderDashboardSummary = async (req: AuthRequest, res: Response): Promise<void> => {
+  try {
+    if (!req.user) {
+      res.status(401).json({ success: false, message: "Unauthorized: Please log in as a rider" });
+      return;
+    }
+
+    const riderId = new Types.ObjectId(req.user.id);
+    const user = await User.findById(riderId).select("name riderDetails").lean();
+    if (!user) {
+      res.status(404).json({ success: false, message: "Rider not found" });
+      return;
+    }
+
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    // Aggregation for metrics
+    const metrics = await Order.aggregate<{
+      todayDeliveries: number;
+      pendingDeliveries: number;
+      totalEarnings: number;
+      activeOrders: number;
+    }>([
+      { $match: { riderId, status: { $in: ["ready", "picked", "delivered"] } } },
+      {
+        $group: {
+          _id: null,
+          todayDeliveries: {
+            $sum: {
+              $cond: [{ $and: [{ $eq: ["$status", "delivered"] }, { $gte: ["$createdAt", today] }] }, 1, 0],
+            },
+          },
+          pendingDeliveries: {
+            $sum: { $cond: [{ $in: ["$status", ["ready", "picked"]] }, 1, 0] },
+          },
+          totalEarnings: {
+            $sum: { $cond: [{ $eq: ["$status", "delivered"] }, "$deliveryFee", 0] },
+          },
+          activeOrders: {
+            $sum: { $cond: [{ $eq: ["$status", "picked"] }, 1, 0] },
+          },
+        },
+      },
+      { $project: { _id: 0, todayDeliveries: 1, pendingDeliveries: 1, totalEarnings: 1, activeOrders: 1 } },
+    ]);
+
+    // Aggregation for earnings trend
+    const earningsTrend = await Order.aggregate<{
+      _id: string;
+      earnings: number;
+    }>([
+      {
+        $match: {
+          riderId,
+          status: "delivered",
+          createdAt: { $gte: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000) },
+        },
+      },
+      {
+        $group: {
+          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+          earnings: { $sum: "$deliveryFee" },
+        },
+      },
+      { $sort: { _id: 1 } },
+    ]);
+
+    // Format earnings trend for 7 days
+    const formattedTrend = Array.from({ length: 7 }, (_, i) => {
+      const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+      const dateStr = format(date, "yyyy-MM-dd");
+      const trendEntry = earningsTrend.find((t) => t._id === dateStr);
+      return { day: format(date, "EEE"), earnings: trendEntry ? trendEntry.earnings : 0 };
+    }).reverse();
+
+    // Fetch recent orders
+    const recentOrders = await Order.find({ riderId, status: { $in: ["ready", "picked", "delivered"] } })
+      .sort({ createdAt: -1 })
+      .limit(5)
+      .populate("restaurantId", "name")
+      .lean()
+      .then((orders) =>
+        orders.map((order) => ({
+          _id: order._id.toString(),
+          restaurantName: (order.restaurantId as any)?.name || "Unknown Restaurant",
+          totalAmount: order.totalAmount,
+          deliveryFee: order.deliveryFee || 0,
+          status: order.status,
+          createdAt: order.createdAt.toISOString(),
+          deliveryAddress: order.deliveryAddress || "N/A",
+        }))
+      );
+
+    const metricsData = metrics[0] || {
+      todayDeliveries: 0,
+      pendingDeliveries: 0,
+      totalEarnings: 0,
+      activeOrders: 0,
+    };
+
+    const rider = await Rider.findOne({ userId: riderId }).select("status").lean();
+    res.status(200).json({
+      success: true,
+      message: "Rider dashboard summary fetched successfully",
+      data: {
+        ...metricsData,
+        riderName: user.name || "Rider",
+        availability: rider?.status === "available",
+        earningsTrend: formattedTrend,
+        recentOrders,
+      },
+    });
+  } catch (error) {
+    console.error("Error fetching rider dashboard summary:", error);
+    res.status(500).json({ success: false, message: "Server error while fetching dashboard summary" });
+  }
+};
+
+// Update rider availability
+export const availability = asyncHandler(async (req: AuthRequest, res: Response) => {
+  const riderUserId = req.user?.id;
+  const { availability } = req.body as { availability: boolean };
+
+  if (!riderUserId) {
+   sendErrorResponse(res, 401, "Unauthorized: Rider ID not found");
+   return;
+ }
+ 
+ if (typeof availability !== "boolean") {
+   sendErrorResponse(res, 400, "Invalid input: availability must be a boolean");
+   return;
+ }
+ 
+
+  const user = await User.findById(riderUserId);
+  if (!user) {
+    sendErrorResponse(res, 404, "User not found");
+    return;
+  }
+
+  if (user.role !== "rider") {
+    sendErrorResponse(res, 403, "Not authorized: Must be a rider");
+    return;
+  }
+
+  if (typeof availability !== "boolean") {
+    sendErrorResponse(res, 400, "Invalid input: availability must be a boolean");
+    return;
+  }
+
+  const rider = await Rider.findOne({ userId: new Types.ObjectId(riderUserId) });
+  if (!rider) {
+    sendErrorResponse(res, 404, "Rider not found");
+    return;
+  }
+
+  // Check for active orders if setting to available
+  if (availability) {
+    const activeOrders = await Order.find({
+      riderId: new Types.ObjectId(riderUserId),
+      status: { $in: ["assigned", "accepted", "out-for-delivery"] },
+    }).lean();
+
+    if (activeOrders.length > 0) {
+      sendErrorResponse(res, 400, "Cannot set available: Complete or cancel active orders first");
+      return;
+    }
+  }
+
+  // Map boolean to Rider status
+  const newStatus = availability ? "available" : "offline";
+
+  // Prevent redundant updates
+  if (rider.status === newStatus) {
+    sendSuccessResponse(res, 200, `Rider already ${newStatus}`, { status: newStatus });
+    return;
+  }
+
+  rider.status = newStatus;
+  rider.lastUpdated = new Date();
+  await rider.save();
+
+  // Emit Socket.IO event to notify restaurants/admins
+  io.to("restaurants").emit("riderAvailabilityUpdate", {
+    riderId: riderUserId,
+    status: newStatus,
+    timestamp: new Date(),
+  });
+
+  logger.info(`Rider ${riderUserId} updated availability to ${newStatus}`);
+  sendSuccessResponse(res, 200, "Availability updated successfully", { status: newStatus });
+});
+
+
+// Existing controllers (unchanged): getAvailableRiders, assignRiderToOrder, updateRiderLocation, getRiderOrders, acceptOrder, updateOrderStatus, getRiderDashboardSummary
+// ... (your provided controllers)
+
+// Get all orders for rider (fixed and improved)
 export const getAllOrdersForRider = asyncHandler(async (req: AuthRequest, res: Response) => {
   const riderUserId = req.user?.id;
 
   if (!riderUserId) {
-     sendErrorResponse(res, 401, "Unauthorized: Rider ID not found");
-     return
+    sendErrorResponse(res, 401, "Unauthorized: Rider ID not found");
+    return;
   }
 
-//   const rider = await Rider.findOne({ userId: riderUserId });
-//   if (!rider) {
-//      sendErrorResponse(res, 404, "Rider not found");
-//      return
-//   }
+  const rider = await Rider.findOne({ userId: riderUserId }).lean();
+  if (!rider) {
+    sendErrorResponse(res, 404, "Rider not found");
+    return;
+  }
 
-  const orders = await Order.find({ status : "preparing" });
-  res.json(orders);
-})
+  // Query parameters for filtering and pagination
+  const {
+    status,
+    page = "1",
+    limit = "10",
+    dateFrom,
+    dateTo,
+  } = req.query as {
+    status?: string;
+    page?: string;
+    limit?: string;
+    dateFrom?: string;
+    dateTo?: string;
+  };
+
+  const query: any = {
+    $or: [
+      { riderId: new Types.ObjectId(riderUserId), status: { $in: ["assigned", "accepted", "out-for-delivery", "delivered"] } },
+      { status: "assigned", riderId: { $exists: false } }, // Unassigned orders for acceptance
+    ],
+  };
+
+  // Filter by status if provided
+  if (status) {
+    query.$or = [{ ...query.$or[0], status }, { ...query.$or[1], status }];
+  }
+
+  // Filter by date range if provided
+  if (dateFrom || dateTo) {
+    query.createdAt = {};
+    if (dateFrom) query.createdAt.$gte = new Date(dateFrom);
+    if (dateTo) query.createdAt.$lte = new Date(dateTo);
+  }
+
+  const pageNum = parseInt(page, 10);
+  const limitNum = parseInt(limit, 10);
+  const skip = (pageNum - 1) * limitNum;
+
+  // Fetch orders with pagination
+  const orders = await Order.find(query)
+    .populate("restaurantId", "name location")
+    .populate("userId", "name phone")
+    .sort({ createdAt: -1 })
+    .skip(skip)
+    .limit(limitNum)
+    .lean()
+    .then((orders) =>
+      orders.map((order) => ({
+        _id: order._id.toString(),
+        restaurantName: (order.restaurantId as any)?.name || "Unknown Restaurant",
+        restaurantAddress: (order.restaurantId as any)?.location
+          ? `${(order.restaurantId as any).location.street}, ${(order.restaurantId as any).location.city}`
+          : "N/A",
+        customerName: (order.userId as any)?.name || "Unknown Customer",
+        customerPhone: (order.userId as any)?.phone || "N/A",
+        totalAmount: order.totalAmount,
+        deliveryFee: order.deliveryFee || 50, // Default if not set
+        status: order.status,
+        createdAt: order.createdAt.toISOString(),
+        deliveryAddress: order.deliveryAddress
+          ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}, ${order.deliveryAddress.pincode}`
+          : "N/A",
+      }))
+    );
+
+  // Get total count for pagination
+  const totalOrders = await Order.countDocuments(query);
+
+  logger.info(`Fetched ${orders.length} orders for rider ${riderUserId}`);
+  sendSuccessResponse(res, 200, "Rider orders fetched successfully", {
+    orders,
+    pagination: {
+      page: pageNum,
+      limit: limitNum,
+      total: totalOrders,
+      totalPages: Math.ceil(totalOrders / limitNum),
+    },
+  });
+});

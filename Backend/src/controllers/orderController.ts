@@ -6,7 +6,7 @@ import User from "@models/userModel";
 import { sendErrorResponse, sendSuccessResponse } from "@utils/responseUtil";
 import type { Response } from "express";
 import asyncHandler from "express-async-handler";
-import mongoose from "mongoose";
+import mongoose, { Types } from "mongoose";
 import { io } from "../../index";
 
 // @desc Create order (customer) 
@@ -264,152 +264,153 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 
 
 export const updateOrderStatus = asyncHandler(async (req, res) => {
-  const order = await Order.findById(req.params.id);
-
-  if (!order) {
-    res.status(404);
-    throw new Error("Order not found");
-  }
-
-  const currentUser = await User.findById(req.user.id);
-
-  if (!currentUser) {
-    res.status(403);
-    throw new Error("Not authorized");
-  }
-
-  // Check role-based access
-  const isRestaurant = Array.isArray(order.restaurantId)
-    ? order.restaurantId.some((id) => id.equals(currentUser.OWN_Restaurant))
-    : order.restaurantId === currentUser.OWN_Restaurant;
-
-  const isRider = order.riderId && order.riderId.equals(req.user.id);
-  const isAdmin = req.user.role === "admin";
-
-  if (isRestaurant || isRider || isAdmin) {
-    const { status, riderId } = req.body;
-
-    const validStatuses = [
-      "pending",
-      "accepted",
-      "preparing",
-      "assigned",
-      "out-for-delivery",
-      "delivered",
-      "cancelled",
-    ];
-
-    if (!validStatuses.includes(status)) {
-      res.status(400);
-      throw new Error("Invalid status");
+  try {
+    const order = await Order.findById(req.params.id);
+    if (!order) {
+      res.status(404);
+      throw new Error("Order not found");
     }
 
-    order.status = status;
-
-    if (riderId && mongoose.Types.ObjectId.isValid(riderId)) {
-      order.riderId = riderId;
+    const currentUser = await User.findById(req.user.id);
+    if (!currentUser) {
+      res.status(403);
+      throw new Error("Not authorized");
     }
 
-    // Add restaurantId to each item if missing
-    order.items = order.items.map((item) => ({
-      ...item,
-      restaurantId: item.restaurantId || order.restaurantId[0],
-    }));
+    const isRestaurant = Array.isArray(order.restaurantId)
+      ? order.restaurantId.some((id) => id.equals(currentUser.OWN_Restaurant))
+      : order.restaurantId === currentUser.OWN_Restaurant;
 
-    // Set default contactNumber
-    if (!order.contactNumber) {
-      order.contactNumber = "N/A";
-    }
+    const isRiderAlreadyAssigned =
+      order.riderId && order.riderId.equals(req.user.id);
 
-    // 🔥 EMIT TO: User, Restaurant(s), Rider (if assigned)
-    const payload = {
-      orderId: order._id,
-      status: order.status,
-      restaurant: order.restaurantId,
-      riderId: order.riderId,
-    };
+    const isRiderAcceptingFirstTime =
+      !order.riderId && req.user.role === "rider";
 
+    const isRider = isRiderAlreadyAssigned || isRiderAcceptingFirstTime;
 
-    // emit status update to the relevant room
-const eventMap = {
-  pending: "orderPending",
-  accepted: "orderAccepted",
-  preparing: "orderPreparing",
-  assigned: "orderAssigned",
-  "out-for-delivery": "orderOutForDelivery",
-  delivered: "orderDelivered",
-  cancelled: "orderCancelled",
-};
+    const isAdmin = req.user.role === "admin";
 
-const eventName = eventMap[status as keyof typeof eventMap];  // Extract the correct event name
+    if (isRestaurant || isRider || isAdmin) {
+      const { status, riderId } = req.body;
+      const validStatuses = [
+        "pending",
+        "accepted",
+        "preparing",
+        "assigned",
+        "out-for-delivery",
+        "delivered",
+        "cancelled",
+      ];
 
-
-if (status === "accepted") {
-  io.emit("orderAccepted", payload);
-}
-
-// Emit to specific rooms
-io.to(`user_${order.userId}`).emit(eventName, {
-  orderId: order._id,
-  status: status,
-});
-
-order.restaurantId.forEach((resId) => {
-  io.to(`restaurant_${resId}`).emit(eventName, {
-    orderId: order._id,
-    status: status,
-  });
-});
-
-if (order.riderId) {
-  io.to(`rider_${order.riderId}`).emit(eventName, {
-    orderId: order._id,
-    status: status,
-  });
-}
-
-
-    // 1. User
-    io.to(`user_${order.userId}`).emit("orderStatusUpdated", payload);
-
-    // 2. Restaurant(s)
-    (Array.isArray(order.restaurantId) ? order.restaurantId : [order.restaurantId]).forEach(
-      (restId) => {
-        io.to(`restaurant_${restId}`).emit("orderStatusUpdated", payload);
+      if (!validStatuses.includes(status)) {
+        res.status(400);
+        throw new Error("Invalid status");
       }
-    );
 
-    // 3. Rider
-    if (order.riderId) {
-      io.to(`rider_${order.riderId}`).emit("orderStatusUpdated", payload);
+      order.status = status;
+
+      if (riderId && mongoose.Types.ObjectId.isValid(riderId)) {
+        order.riderId = riderId;
+      } else if (isRiderAcceptingFirstTime) {
+        order.riderId = new Types.ObjectId(req.user.id);
+      }
+
+      // Fix: Add missing restaurantId to items
+      order.items = order.items.map((item) => ({
+        ...item,
+        restaurantId: item.restaurantId || order.restaurantId[0],
+      }));
+
+      if (!order.contactNumber) {
+        order.contactNumber = "N/A";
+      }
+
+      const payload = {
+        orderId: order._id,
+        status: order.status,
+        restaurant: order.restaurantId,
+        riderId: order.riderId,
+      };
+
+      const eventMap = {
+        pending: "orderPending",
+        accepted: "orderAccepted",
+        preparing: "orderPreparing",
+        assigned: "orderAssigned",
+        "out-for-delivery": "orderOutForDelivery",
+        delivered: "orderDelivered",
+        cancelled: "orderCancelled",
+      };
+
+      const eventName = eventMap[status];
+
+      // Global Events
+      io.emit(eventName, payload);
+
+      // Emit to user
+      io.to(`user_${order.userId}`).emit(eventName, { orderId: order._id, status });
+
+      // Emit to restaurant(s)
+      (Array.isArray(order.restaurantId)
+        ? order.restaurantId
+        : [order.restaurantId]
+      ).forEach((resId) => {
+        io.to(`restaurant_${resId}`).emit(eventName, {
+          orderId: order._id,
+          status,
+        });
+      });
+
+      // Emit to rider if assigned
+      if (order.riderId) {
+        io.to(`rider_${order.riderId}`).emit(eventName, {
+          orderId: order._id,
+          status,
+        });
+      }
+
+      await order.save();
+      sendSuccessResponse(res, 200, "Status updated", order);
+    } else {
+      res.status(403);
+      throw new Error("Not authorized to update this order");
     }
-
-    await order.save();
-
-    sendSuccessResponse(res, 200, "Status updated", order);
-  } else {
-    res.status(403);
-    throw new Error("Not authorized");
+  } catch (error:unknown) {
+    console.error("Update status error:", error.message);
+    res.status(500).json({
+      success: false,
+      message: error.message || "Server Error",
+    });
   }
 });
+
 
 // @desc Get available orders for rider
 // @route GET /api/v1/orders/available
 // @access Private
 export const availableOrders = asyncHandler(async (req, res) => {
-  const orders = await Order.find({ status: "accepted", riderId: null });
-
-  console.log(orders)
+  const orders = await Order.find({
+    status: { $in: ["accepted", "preparing"] },
+    riderId: null,
+  })
+    .populate("restaurantId", "name") // Populate restaurantId with the name field
+    .exec(); // Execute the query
 
   res.status(200).json(
     orders.map((order) => ({
       orderId: order._id,
       status: order.status,
-      restaurantId: order.restaurantId,
+      restaurantName: (order.restaurantId as any)?.name || "Unknown", // Type assertion
+      deliveryAddress: order.deliveryAddress,
+      totalAmount: order.totalAmount,
+      createdAt: order.createdAt,
       items: order.items,
     }))
   );
 });
+
+  
 
 
 

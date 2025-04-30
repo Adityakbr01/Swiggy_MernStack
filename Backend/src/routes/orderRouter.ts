@@ -40,13 +40,11 @@ orderRouter.get(
   restrictTo("restaurant"),
   getRestaurantOrders
 );
-// get my order (Customer only)
 orderRouter.get("/my-orders", protect, getUserOrders);
+orderRouter.put("/:id/status", protect, restrictTo("restaurant", "rider"), updateOrderStatus);
 orderRouter.get("/:id", protect,restrictTo("customer", "restaurant"), getOrderById); // Track specific order
 orderRouter.delete("/:id", protect, cancelOrder); // Cancel order
 
-// Restaurant/Rider routes
-orderRouter.put("/:id/status", protect, restrictTo("restaurant", "rider"), updateOrderStatus);
 
 
 export default orderRouter;
