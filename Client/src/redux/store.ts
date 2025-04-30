@@ -5,17 +5,20 @@ import authReducer from '@/redux/feature/authSlice';
 import { restaurantApi } from '@/redux/services/restaurantApi';
 import { setupListeners } from "@reduxjs/toolkit/query";
 import { authApi } from "./services/authApi";
+import { riderApi } from "./services/riderApi";
 
 export const store = configureStore({
   reducer: {
     [authApi.reducerPath]: authApi.reducer,
     [restaurantApi.reducerPath]: restaurantApi.reducer,
     [orderApi.reducerPath]: orderApi.reducer,
+    [riderApi.reducerPath]: riderApi.reducer,
+
     auth: authReducer,
 
   },
   middleware: (getDefaultMiddleware) =>
-    getDefaultMiddleware().concat(authApi.middleware,restaurantApi.middleware,orderApi.middleware),
+    getDefaultMiddleware().concat(authApi.middleware,restaurantApi.middleware,orderApi.middleware,riderApi.middleware),
 });
 
 const initialiseApp = async () => {

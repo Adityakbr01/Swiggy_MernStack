@@ -1,6 +1,7 @@
 import { Route, BrowserRouter as Router, Routes } from "react-router-dom";
 import "./App.css";
 import RestaurantLayout from "./components/Layout/RestaurantLayout";
+import RiderLayout from "./components/Layout/RiderLayout";
 import HomePage from "./pages/HomePage";
 import LoginPage from "./pages/LoginPage";
 import NotFoundPage from "./pages/NotFoundPage";
@@ -12,7 +13,8 @@ import RestaurantDashboard from "./pages/RestaurantDashboard/RestaurantDashboard
 import OrdersPage from "./pages/RestaurantDashboard/RestaurantOrders";
 import RestaurantSetting from "./pages/RestaurantDashboard/RestaurantSetting";
 import UpdateMenuItem from "./pages/RestaurantDashboard/UpdateMenuItem";
-import RiderLayout from "./components/Layout/RiderLayout";
+import RiderDashboard from "./pages/RiderDashboard/RiderDashboard";
+import AvailableOrders from "./pages/RiderDashboard/RiderOrders";
 
 function App() {
   return (
@@ -36,8 +38,8 @@ function App() {
         {/* ----------------------------------------------------------------- */}
         {/* Rider routes */}
         <Route path="/rider/dashboard" element={<RiderLayout />}>
-          <Route index element={<h2>Dashboard</h2>} />
-          <Route path="orders" element={<h2>Orders</h2>} />
+          <Route index element={<RiderDashboard/>}/>
+          <Route path="orders" element={<AvailableOrders/>} />
           <Route path="settings" element={<h2>Settings</h2>} />
         </Route>
         {/* End of Rider routes */}
