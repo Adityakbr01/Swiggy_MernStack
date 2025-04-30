@@ -12,6 +12,7 @@ import RestaurantDashboard from "./pages/RestaurantDashboard/RestaurantDashboard
 import OrdersPage from "./pages/RestaurantDashboard/RestaurantOrders";
 import RestaurantSetting from "./pages/RestaurantDashboard/RestaurantSetting";
 import UpdateMenuItem from "./pages/RestaurantDashboard/UpdateMenuItem";
+import RiderLayout from "./components/Layout/RiderLayout";
 
 function App() {
   return (
@@ -20,6 +21,8 @@ function App() {
         <Route path="/" element={<HomePage />} />
         <Route path="/auth/Register" element={<RegisterPage />} />
         <Route path="/auth/Login" element={<LoginPage />} />
+        {/* ----------------------------------------------------------------- */}
+        {/* Restaurant routes */}
         <Route path="/restaurant/dashboard" element={<RestaurantLayout />}>
           <Route index element={<RestaurantDashboard />} />
           <Route path="orders" element={<OrdersPage />} />
@@ -29,6 +32,16 @@ function App() {
         <Route path="/restaurant/dashboard/update-menu/:id" element={<UpdateMenuItem />} />
         <Route path="/restaurant/dashboard/add-menu" element={<AddMenuItem />} />
         <Route path="/restaurant/dashboard/add-restaurant" element={<AddRestaurant />} />
+        {/* End of Restaurant routes */}
+        {/* ----------------------------------------------------------------- */}
+        {/* Rider routes */}
+        <Route path="/rider/dashboard" element={<RiderLayout />}>
+          <Route index element={<h2>Dashboard</h2>} />
+          <Route path="orders" element={<h2>Orders</h2>} />
+          <Route path="settings" element={<h2>Settings</h2>} />
+        </Route>
+        {/* End of Rider routes */}
+        {/* ----------------------------------------------------------------- */}
         <Route path="*" element={<NotFoundPage />} />
       </Routes>
     </Router>
