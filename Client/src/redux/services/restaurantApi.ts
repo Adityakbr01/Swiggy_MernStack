@@ -1,37 +1,78 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { RootUrl } from "@/utils/_Constant";
 
+export interface FoodItem {
+  _id: string;
+  id: string;
+  name: string;
+  description: string;
+  price: number;
+  image: string;
+  category: string;
+  rating: number;
+  vegetarian: boolean;
+  restaurant: string;
+  deliveryTime: number;
+}
+
+export interface Restaurant {
+  _id: string;
+  name: string;
+  restaurantImage?: string;
+  cuisines: string[];
+  rating: number;
+  deliveryTime: number;
+  deliveryFee: number;
+  location: {
+    coordinates: {
+      type: string;
+      coordinates: [number, number];
+    };
+    street: string;
+    city: string;
+    state: string;
+    country: string;
+    pincode: string;
+    distance?: string;
+  };
+}
+
+interface SearchFoodQueryParams {
+  q: string;
+  category: string;
+  minPrice: number;
+  maxPrice: number;
+  vegetarian: boolean;
+  sortBy: string;
+}
+
+interface SearchRestaurantsQueryParams {
+  q: string;
+  category: string;
+  sortBy: string;
+}
+
 export const restaurantApi = createApi({
   reducerPath: "restaurantApi",
-
   baseQuery: fetchBaseQuery({
     baseUrl: `${RootUrl}/restaurants`,
-    credentials: "include"
+    credentials: "include",
   }),
-
-  
   tagTypes: ["Restaurants"],
   endpoints: (builder) => ({
-    // ✅ Get Nearby Restaurants
     getNearbyRestaurants: builder.query({
       query: ({ lat, lng, maxDistance = 1000 }) =>
         `/nearby?lat=${lat}&lng=${lng}&maxDistance=${maxDistance}`,
       providesTags: ["Restaurants"],
     }),
-
-    // ✅ Get All Restaurants
     getRestaurants: builder.query({
       query: () => "/",
       providesTags: ["Restaurants"],
     }),
-
-    // ✅ Get Single Restaurant by ID
     getRestaurantById: builder.query({
       query: (id) => `/${id}`,
       providesTags: ["Restaurants"],
     }),
-
-    // ✅ Add New Restaurant
     addRestaurant: builder.mutation({
       query: (newRestaurant) => ({
         url: "/",
@@ -40,8 +81,6 @@ export const restaurantApi = createApi({
       }),
       invalidatesTags: ["Restaurants"],
     }),
-
-    // ✅ Update Restaurant
     updateRestaurant: builder.mutation<any, { restaurantId: string; data: FormData }>({
       query: ({ restaurantId, data }) => ({
         url: `/${restaurantId}`,
@@ -50,8 +89,6 @@ export const restaurantApi = createApi({
       }),
       invalidatesTags: ["Restaurants"],
     }),
-
-    // ✅ Delete Restaurant
     deleteRestaurant: builder.mutation({
       query: (id) => ({
         url: `/${id}`,
@@ -59,8 +96,6 @@ export const restaurantApi = createApi({
       }),
       invalidatesTags: ["Restaurants"],
     }),
-
-    // ✅ Add New Menu Item
     addMenuItem: builder.mutation({
       query: ({ restaurantId, data }) => ({
         url: `/${restaurantId}/menu`,
@@ -69,20 +104,14 @@ export const restaurantApi = createApi({
       }),
       invalidatesTags: ["Restaurants"],
     }),
-
-    // ✅ Get Menus by Restaurant ID
     getMenus: builder.query({
       query: (restaurantId) => `/${restaurantId}/menu`,
       providesTags: ["Restaurants"],
     }),
-
-    // ✅ Get Menu Items by Restaurant ID
     getMenuItem: builder.query({
       query: ({ restaurantId, itemId }) => `/${restaurantId}/menu/${itemId}`,
       providesTags: ["Restaurants"],
     }),
-
-    // ✅ Update Menu Item
     updateMenuItem: builder.mutation({
       query: ({ restaurantId, itemId, data }) => ({
         url: `/${restaurantId}/menu/${itemId}`,
@@ -91,9 +120,6 @@ export const restaurantApi = createApi({
       }),
       invalidatesTags: ["Restaurants"],
     }),
-
-
-    // ✅ Delete Menu Item
     deleteMenuItem: builder.mutation({
       query: ({ restaurantId, itemId }) => ({
         url: `/${restaurantId}/menu/${itemId}`,
@@ -101,7 +127,6 @@ export const restaurantApi = createApi({
       }),
       invalidatesTags: ["Restaurants"],
     }),
-
     getAllMyMenus: builder.query({
       query: () => `/menus`,
       providesTags: ["Restaurants"],
@@ -109,12 +134,37 @@ export const restaurantApi = createApi({
     GetSummary: builder.query({
       query: () => `/dashboard/summary`,
       providesTags: ["Restaurants"],
-    })
+    }),
+    SearchFood: builder.query<FoodItem[], SearchFoodQueryParams>({
+      query: ({ q, category, minPrice, maxPrice, vegetarian, sortBy }) => ({
+        url: "/search/food",
+        params: {
+          q,
+          category,
+          minPrice,
+          maxPrice,
+          vegetarian: vegetarian.toString(),
+          sortBy,
+        },
+      }),
+      transformResponse: (response: { status: string; results: number; data: FoodItem[] }) => response.data,
+      providesTags: ["Restaurants"],
+    }),
+    SearchRestaurants: builder.query<Restaurant[], SearchRestaurantsQueryParams>({
+      query: ({ q, category, sortBy }) => ({
+        url: "/search/restaurants",
+        params: {
+          q,
+          category,
+          sortBy,
+        },
+      }),
+      transformResponse: (response: { status: string; results: number; data: Restaurant[] }) => response.data,
+      providesTags: ["Restaurants"],
+    }),
   }),
-  
 });
 
-// ✅ Export Hooks
 export const {
   useGetNearbyRestaurantsQuery,
   useGetRestaurantsQuery,
@@ -128,6 +178,7 @@ export const {
   useUpdateMenuItemMutation,
   useDeleteMenuItemMutation,
   useGetAllMyMenusQuery,
-  useGetSummaryQuery
-
+  useGetSummaryQuery,
+  useSearchFoodQuery,
+  useSearchRestaurantsQuery,
 } = restaurantApi;

@@ -1,5 +1,72 @@
+
+@import url('https://fonts.googleapis.com/css2?family=Lato:ital,wght@0,100;0,300;0,400;0,700;0,900;1,100;1,300;1,400;1,700;1,900&display=swap');
+
+
 @import "tailwindcss";
 @import "tw-animate-css";
+
+.lato-thin {
+  font-family: "Lato", sans-serif;
+  font-weight: 100;
+  font-style: normal;
+}
+
+.lato-light {
+  font-family: "Lato", sans-serif;
+  font-weight: 300;
+  font-style: normal;
+}
+
+.lato-regular {
+  font-family: "Lato", sans-serif;
+  font-weight: 400;
+  font-style: normal;
+}
+
+.lato-bold {
+  font-family: "Lato", sans-serif;
+  font-weight: 700;
+  font-style: normal;
+}
+
+.lato-black {
+  font-family: "Lato", sans-serif;
+  font-weight: 900;
+  font-style: normal;
+}
+
+.lato-thin-italic {
+  font-family: "Lato", sans-serif;
+  font-weight: 100;
+  font-style: italic;
+}
+
+.lato-light-italic {
+  font-family: "Lato", sans-serif;
+  font-weight: 300;
+  font-style: italic;
+}
+
+.lato-regular-italic {
+  font-family: "Lato", sans-serif;
+  font-weight: 400;
+  font-style: italic;
+}
+
+.lato-bold-italic {
+  font-family: "Lato", sans-serif;
+  font-weight: 700;
+  font-style: italic;
+}
+
+.lato-black-italic {
+  font-family: "Lato", sans-serif;
+  font-weight: 900;
+  font-style: italic;
+}
+
+
+
 
 @custom-variant dark (&:is(.dark *));
 :root {
@@ -156,3 +223,67 @@
 
 
 
+.shape4 {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  background: #3df4c9ea;
+  border-radius: 50%;
+  filter: blur(120px);
+    top: 40%;
+    right: 20%;
+}
+
+.shape5 {
+  position: absolute;
+  width: 400px;
+  height: 400px;
+  background: #3df4c9ea;
+  border-radius: 50%;
+  filter: blur(120px);
+    top: 40%;
+    left: -20%;
+}
+
+.gl {
+  background: rgba(255, 255, 255, 0.066);
+  /* box-shadow: 0 8px 32px 0 rgba( 31, 38, 135, 0.37 ); */
+  backdrop-filter: blur( 3.5px );
+  -webkit-backdrop-filter: blur( 3.5px );
+}
+
+
+.shape1 {
+  position: absolute;
+  width: 500px;
+  height: 500px;
+  /* background: #24cfa7; */
+  border-radius: 50%;
+  filter: blur(150px);
+  top: 10%;
+  left: 30%;
+}
+
+/* Glowing abstract shape 2 */
+.shape2 {
+  position: absolute;
+  width: 300px;
+  height: 300px;
+  /* background: #24cfa7; */
+  border-radius: 50%;
+  filter: blur(100px);
+  top: 80%;
+  left: 10%;
+}
+
+/* Glowing abstract shape 3 */
+.shape3 {
+  position: absolute;
+  width: 100px;
+  height: 100px;
+  /* background: #24cfa7; */
+  border-radius: 50%;
+  filter: blur(70px);
+  top: 40%;
+  right: 20%;
+}

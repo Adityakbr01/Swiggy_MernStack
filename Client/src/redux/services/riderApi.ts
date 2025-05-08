@@ -1,6 +1,7 @@
 import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 import { RootState } from "@/redux/store";
 import { RootUrl } from "@/utils/_Constant";
+import { use } from "react";
 
 interface RiderOrdersResponse {
   success: boolean;
@@ -81,12 +82,24 @@ export const riderApi = createApi({
           method: "GET",
         }),
       }),
-      availableOrders: builder.query({
+      // availableOrders: builder.query({
+      //   query: () => ({
+      //     url: `/availableOrders`,
+      //     method: "GET",
+      //   })
+      // }),
+      AllordersForRider: builder.query({
         query: () => ({
-          url: `/availableOrders`,
+          url: `/Allorders`,
           method: "GET",
         })
       }),
+      availableorders: builder.query({
+        query: () => ({
+          url: `/available-orders`,
+          method: "GET",
+        })
+      })
   }),
 });
 
@@ -97,5 +110,6 @@ export const {
   useGetAllOrdersForRiderQuery,
   useAcceptOrderMutation,
   useGetAvailableRidersQuery,
-  useAvailableOrdersQuery
+  useAllordersForRiderQuery,
+useAvailableordersQuery
 } = riderApi;

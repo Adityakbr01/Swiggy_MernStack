@@ -1,16 +1,26 @@
-
-import { useSelector } from "react-redux";
-import { RootState } from "@/redux/store";
-import { useGetRiderSummaryQuery, useUpdateAvailabilityMutation } from "@/redux/services/riderApi";
-import { motion } from "framer-motion";
-import { Loader2, Bike, Package, Wallet, RefreshCw, Clock, IndianRupee } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import { format } from "date-fns";
 import { Button } from "@/components/ui/button";
-import { Link } from "react-router-dom";
-import { Tooltip as ShadTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
+import { Tooltip as ShadTooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useGetRiderSummaryQuery, useUpdateAvailabilityMutation } from "@/redux/services/riderApi";
+import { RootState } from "@/redux/store";
+import { format } from "date-fns";
+import { motion } from "framer-motion";
+import { Bike, Clock, IndianRupee, Loader2, Package, RefreshCw, Wallet } from "lucide-react";
+import { useEffect } from "react";
+import { useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
+
+interface DeliveryAddress {
+  street: string;
+  city: string;
+  state: string;
+  country: string;
+  pincode: string;
+  coordinates: { lat: number; lng: number };
+}
 
 interface RecentOrder {
   _id: string;
@@ -19,7 +29,7 @@ interface RecentOrder {
   deliveryFee: number;
   status: string;
   createdAt: string;
-  deliveryAddress: string;
+  deliveryAddress: DeliveryAddress; // Updated from string to object
 }
 
 interface RiderDashboardSummary {
@@ -48,7 +58,14 @@ const RiderDashboard = () => {
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
   const { data, isLoading, error, refetch } = useGetRiderSummaryQuery(undefined);
 
-  console.log(data)
+  // Debug data
+  useEffect(() => {
+    console.log("useGetRiderSummaryQuery data:", data);
+    if (error) {
+      console.error("useGetRiderSummaryQuery error:", error);
+    }
+  }, [data, error]);
+
   const [updateAvailability] = useUpdateAvailabilityMutation();
 
   if (!user || user.role !== "rider") {
@@ -81,9 +98,16 @@ const RiderDashboard = () => {
     try {
       await updateAvailability({ availability: !availability }).unwrap();
       refetch();
-    } catch (err) {
+    } catch (err:any) {
       console.error("Failed to update availability:", err);
+      toast.error(err.data.message);
     }
+  };
+
+  // Format deliveryAddress object into a string
+  const formatDeliveryAddress = (address: DeliveryAddress): string => {
+    const { street, city, pincode } = address;
+    return `${street}, ${city}, ${pincode}`;
   };
 
   return (
@@ -182,7 +206,7 @@ const RiderDashboard = () => {
                 </div>
               ) : (
                 <div className="space-y-2">
-                  {recentOrders.map((order, index) => (
+                  {recentOrders.map((order: any, index: number) => (
                     <Link key={order._id} to={`/rider/dashboard/orders?orderId=${order._id}`}>
                       <motion.div
                         initial={{ x: -20, opacity: 0 }}
@@ -193,7 +217,7 @@ const RiderDashboard = () => {
                         <div>
                           <span className="text-blue-900 font-medium">#{order._id.slice(-6)}</span>
                           <p className="text-sm text-blue-700">{order.restaurantName}</p>
-                          <p className="text-sm text-blue-600">{order.deliveryAddress}</p>
+                          <p className="text-sm text-blue-600">{formatDeliveryAddress(order.deliveryAddress)}</p>
                           <p className="text-sm text-blue-600">{format(new Date(order.createdAt), "dd MMM yyyy, HH:mm")}</p>
                         </div>
                         <div className="flex items-center gap-4">

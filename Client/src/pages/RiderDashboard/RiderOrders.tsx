@@ -44,7 +44,7 @@ const AvailableOrders = () => {
   const { user } = useSelector((state: RootState) => state.auth) as {
     user: User | null;
   };
-  const [acceptOrder] = useUpdateOrderStatusMutation();
+  const [acceptOrder,{isLoading: isAccepting}] = useUpdateOrderStatusMutation();
 
   // Handle accepting an order
   const handleAcceptOrder = async (orderId: string) => {
@@ -57,9 +57,9 @@ const AvailableOrders = () => {
         setUpdatedOrderId(null);
         refetch(); // Refresh API orders
       }, 3000);
-    } catch (error) {
-      console.error("Failed to accept order:", error);
-      toast.error("Failed to accept order. Try again.");
+    } catch (error: any) {
+      
+      toast.error(error.data.message ||"Failed to accept order. Try again.");
     }
   };
 
