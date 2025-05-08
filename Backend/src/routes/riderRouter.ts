@@ -9,6 +9,7 @@ import {
   getAllOrdersForRider,
   getRiderDashboardSummary,
   availability,
+  getAvailableOrders,
 } from "@/controllers/riderController";
 import { protect } from "@/middlewares/authMiddleware"; // Placeholder for your auth middleware
 import { logger } from "@/utils/logger"; // Assuming logger utility
@@ -44,5 +45,6 @@ router.patch("/orders/:orderId/status", protect, updateOrderStatus);
 
 // Get all orders for a rider (rider)
 router.get("/Allorders", protect, getAllOrdersForRider);
+router.get("/available-orders", protect, getAvailableOrders);
 
 export default router;

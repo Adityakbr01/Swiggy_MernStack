@@ -434,14 +434,14 @@ export const availability = asyncHandler(async (req: AuthRequest, res: Response)
   }
 
   // Check for active orders if setting to available
-  if (availability) {
+  if (!availability) {
     const activeOrders = await Order.find({
       riderId: new Types.ObjectId(riderUserId),
       status: { $in: ["assigned", "accepted", "out-for-delivery"] },
     }).lean();
 
     if (activeOrders.length > 0) {
-      sendErrorResponse(res, 400, "Cannot set available: Complete or cancel active orders first");
+      sendErrorResponse(res, 400, "Cannot set offline: Complete or cancel active orders first");
       return;
     }
   }
@@ -567,4 +567,71 @@ export const getAllOrdersForRider = asyncHandler(async (req: AuthRequest, res: R
       totalPages: Math.ceil(totalOrders / limitNum),
     },
   });
+});
+
+
+export const getAvailableOrders = asyncHandler(async (req: AuthRequest, res: Response) => {
+  logger.debug(`Fetching available orders for rider userId: ${req.user?.id}`);
+
+  // Validate rider userId
+  const riderUserId = req.user?.id;
+  if (!riderUserId || !Types.ObjectId.isValid(riderUserId)) {
+    logger.error(`Invalid or missing rider userId: ${riderUserId}`);
+    sendErrorResponse(res, 401, "Unauthorized: Invalid rider ID");
+    return;
+  }
+
+  // Check if user is a rider
+  if (req.user?.role !== "rider") {
+    logger.error(`User ${riderUserId} is not a rider, role: ${req.user?.role}`);
+    sendErrorResponse(res, 403, "Not authorized: Must be a rider");
+    return;
+  }
+
+  // Verify rider exists
+  const rider = await Rider.findOne({ userId: new Types.ObjectId(riderUserId) }).lean();
+  if (!rider) {
+    logger.error(`Rider not found for userId: ${riderUserId}`);
+    sendErrorResponse(res, 404, "Rider not found");
+    return;
+  }
+  logger.debug(`Rider found: ${rider._id}, availability: ${rider.status}`);
+
+  // Only fetch orders if rider is available
+  if (!rider.status) {
+    logger.debug(`Rider ${riderUserId} is offline, returning empty orders`);
+    sendSuccessResponse(res, 200, "No available orders for offline rider", []);
+    return;
+  }
+
+  // Fetch orders with status assigned, accepted, or preparing
+  const orders = await Order.find({
+    status: { $in: ["assigned", "accepted", "preparing"] },
+    $or: [{ riderId: null }, { riderId: new Types.ObjectId(riderUserId) }],
+  })
+    .populate("restaurantId", "name location")
+    .populate("userId", "name phone")
+    .sort({ createdAt: -1 })
+    .lean();
+
+  // Format response to match RiderSettings.tsx and riderApi.ts
+  const formattedOrders = orders.map((order) => ({
+    _id: order._id.toString(),
+    restaurantName: (order.restaurantId as any)?.name || "Unknown Restaurant",
+    restaurantAddress: (order.restaurantId as any)?.location
+      ? `${(order.restaurantId as any).location.street}, ${(order.restaurantId as any).location.city}`
+      : "N/A",
+    customerName: (order.userId as any)?.name || "Unknown Customer",
+    customerPhone: (order.userId as any)?.phone || "N/A",
+    totalAmount: order.totalAmount || 0,
+    deliveryFee: order.deliveryFee || 50, // Default if not set
+    status: order.status,
+    createdAt: order.createdAt.toISOString(),
+    deliveryAddress: order.deliveryAddress
+      ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}, ${order.deliveryAddress.pincode}`
+      : "N/A",
+  }));
+
+  logger.info(`Fetched ${formattedOrders.length} available orders for rider ${riderUserId}`);
+  sendSuccessResponse(res, 200, "Available orders fetched successfully", formattedOrders);
 });

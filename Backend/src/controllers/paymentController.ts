@@ -10,75 +10,175 @@ import mongoose from "mongoose";
 import Restaurant, { type IRestaurant } from "@models/restaurantModel";
 import { sendRestaurantNotification } from "@utils/notificationUtil";
 
+// const razorpay = new Razorpay({
+//   key_id: process.env.RAZORPAY_KEY_ID!,
+//   key_secret: process.env.RAZORPAY_KEY_SECRET!,
+// });
+
+// // Process Payment (Initiate Payment or Handle COD)
+// export const processPayment = asyncHandler(async (req: AuthRequest, res) => {
+//   const { orderId } = req.params;
+//   const { method } = req.body; // "UPI", "card", "COD
+
+//   // Debug: Check req.user
+//   console.log("req.user:", req.user);
+//   if (!req.user || (!req.user.id && !req.user._id)) {
+//     res.status(401);
+//     throw new Error("User not authenticated");
+//   }
+
+//   const userId = req.user.id || req.user._id; // Handle both cases (id or _id)
+//   const order = await Order.findById(orderId);
+//   console.log("Order:", order);
+//   if (!order || order.userId.toString() !== userId?.toString()) {
+//     res.status(404);
+//     throw new Error("Order not found or not authorized");
+//   }
+
+//   if (order.paymentStatus === "paid") {
+//     res.status(400);
+//     throw new Error("Payment already completed for this order");
+//   }
+
+//   if (method === "COD") {
+//     const payment = new Payment({
+//       orderId,
+//       userId,
+//       amount: order.totalAmount,
+//       status: "success",
+//       method: "COD",
+//     });
+//     await payment.save();
+//     order.paymentStatus = "paid";
+//     await order.save();
+//      sendSuccessResponse(res, 200, "COD payment recorded", payment);
+//      return
+//   }
+
+//   // Online payment with Razorpay
+//   const razorpayOrder = await razorpay.orders.create({
+//     amount: order.totalAmount * 100, // Convert to paise
+//     currency: "INR",
+//     receipt: orderId,
+//   });
+
+//   const payment = new Payment({
+//     orderId,
+//     userId,
+//     amount: order.totalAmount,
+//     paymentId: razorpayOrder.id,
+//     status: "pending",
+//     method: method || "card", // Default to "card" if method not specified
+//   });
+//   await payment.save();
+
+//    sendSuccessResponse(res, 200, "Payment initiated", {
+//     razorpayOrderId: razorpayOrder.id,
+//     amount: order.totalAmount * 100,
+//     key: process.env.RAZORPAY_KEY_ID,
+//     orderId: order._id,
+//   });
+//   return
+// });
+
+
+
+// Razorpay instance
 const razorpay = new Razorpay({
   key_id: process.env.RAZORPAY_KEY_ID!,
   key_secret: process.env.RAZORPAY_KEY_SECRET!,
 });
 
-// Process Payment (Initiate Payment or Handle COD)
-export const processPayment = asyncHandler(async (req: AuthRequest, res) => {
+// Controller: Process Payment (COD or Razorpay)
+export const processPayment = asyncHandler(async (req:AuthRequest, res) => {
   const { orderId } = req.params;
-  const { method } = req.body; // "UPI", "card", "COD
+  const { method } = req.body; // "UPI", "card", "COD"
 
-  // Debug: Check req.user
-  console.log("req.user:", req.user);
-  if (!req.user || (!req.user.id && !req.user._id)) {
-    res.status(401);
-    throw new Error("User not authenticated");
-  }
+  try {
+    // Validate user
+    if (!req.user || (!req.user.id && !req.user._id)) {
+      res.status(401);
+      throw new Error("User not authenticated");
+    }
 
-  const userId = req.user.id || req.user._id; // Handle both cases (id or _id)
-  const order = await Order.findById(orderId);
-  console.log("Order:", order);
-  if (!order || order.userId.toString() !== userId?.toString()) {
-    res.status(404);
-    throw new Error("Order not found or not authorized");
-  }
+    const userId = req.user.id || req.user._id;
 
-  if (order.paymentStatus === "paid") {
-    res.status(400);
-    throw new Error("Payment already completed for this order");
-  }
+    // Find order
+    const order = await Order.findById(orderId);
+    if (!order || order.userId.toString() !== userId?.toString()) {
+      res.status(404);
+      throw new Error("Order not found or not authorized");
+    }
 
-  if (method === "COD") {
+    if (order.paymentStatus === "paid") {
+      res.status(400);
+      throw new Error("Payment already completed for this order");
+    }
+
+    // Handle COD
+    if (method === "COD") {
+      const payment = new Payment({
+        orderId,
+        userId,
+        amount: order.totalAmount,
+        status: "success",
+        method: "COD",
+      });
+
+      await payment.save();
+
+      order.paymentStatus = "paid";
+      await order.save();
+
+       sendSuccessResponse(res, 200, "COD payment recorded", payment);
+       return
+    }
+
+    // Handle Online Payment (Razorpay)
+    let razorpayOrder;
+    try {
+      razorpayOrder = await razorpay.orders.create({
+        amount: order.totalAmount * 100, // Amount in paise
+        currency: "INR",
+        receipt: orderId,
+      });
+    } catch (err: any) {
+      console.error("Razorpay order creation failed:", err);
+      res.status(500);
+      throw new Error("Failed to initiate Razorpay payment");
+    }
+
     const payment = new Payment({
       orderId,
       userId,
       amount: order.totalAmount,
-      status: "success",
-      method: "COD",
+      paymentId: razorpayOrder.id,
+      status: "pending",
+      method: method || "card",
     });
+
     await payment.save();
-    order.paymentStatus = "paid";
-    await order.save();
-     sendSuccessResponse(res, 200, "COD payment recorded", payment);
-     return
+
+     sendSuccessResponse(res, 200, "Payment initiated", {
+      razorpayOrderId: razorpayOrder.id,
+      amount: order.totalAmount * 100,
+      key: process.env.RAZORPAY_KEY_ID,
+      orderId: order._id,
+    });
+    return
+  } catch (err: any) {
+    console.error("processPayment error:", err);
+
+    // Safe fallback error response
+    const message =
+      err?.response?.data?.message || err.message || "Internal Server Error";
+
+    res.status(err?.response?.status || res.statusCode || 500).json({
+      success: false,
+      message,
+      error: process.env.NODE_ENV === "development" ? err.stack : undefined,
+    });
   }
-
-  // Online payment with Razorpay
-  const razorpayOrder = await razorpay.orders.create({
-    amount: order.totalAmount * 100, // Convert to paise
-    currency: "INR",
-    receipt: orderId,
-  });
-
-  const payment = new Payment({
-    orderId,
-    userId,
-    amount: order.totalAmount,
-    paymentId: razorpayOrder.id,
-    status: "pending",
-    method: method || "card", // Default to "card" if method not specified
-  });
-  await payment.save();
-
-   sendSuccessResponse(res, 200, "Payment initiated", {
-    razorpayOrderId: razorpayOrder.id,
-    amount: order.totalAmount * 100,
-    key: process.env.RAZORPAY_KEY_ID,
-    orderId: order._id,
-  });
-  return
 });
 
 

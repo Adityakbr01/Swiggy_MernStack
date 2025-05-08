@@ -8,6 +8,7 @@ import type { Response } from "express";
 import asyncHandler from "express-async-handler";
 import mongoose, { Types } from "mongoose";
 import { io } from "../../index";
+import Rider from "@/models/riderModel";
 
 // @desc Create order (customer) 
 // @route POST /api/v1/orders ☘️
@@ -114,6 +115,8 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 });
 
 // @desc Update order status
+
+
 // @route PUT /api/v1/orders/:id/status
 // @access Private
 // export const updateOrderStatus = asyncHandler(async (req, res) => {
@@ -263,7 +266,138 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 
 
 
-export const updateOrderStatus = asyncHandler(async (req, res) => {
+// export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res) => {
+//   try {
+//     const order = await Order.findById(req.params.id);
+//     if (!order) {
+//       res.status(404);
+//       throw new Error("Order not found");
+//     }
+
+//     const userId = req.user.id || req.user._id;
+//     if (!userId) {
+//       res.status(401);
+//       throw new Error("User not authenticated");
+//     }
+
+//     const currentUser = await User.findById(req.user.id);
+//     if (!currentUser) {
+//       res.status(403);
+//       throw new Error("Not authorized");
+//     }
+
+//     const isRestaurant = Array.isArray(order.restaurantId)
+//       ? order.restaurantId.some((id) => id.equals(currentUser.OWN_Restaurant))
+//       : order.restaurantId === currentUser.OWN_Restaurant;
+
+//     const isRiderAlreadyAssigned =
+//       order.riderId && order.riderId.equals(req.user.id);
+
+//     const isRiderAcceptingFirstTime =
+//       !order.riderId && req.user.role === "rider";
+
+//     const isRider = isRiderAlreadyAssigned || isRiderAcceptingFirstTime;
+
+//     const isAdmin = req.user.role === "admin";
+
+//     if (isRestaurant || isRider || isAdmin) {
+//       const { status, riderId } = req.body;
+//       const validStatuses = [
+//         "pending",
+//         "accepted",
+//         "preparing",
+//         "assigned",
+//         "out-for-delivery",
+//         "delivered",
+//         "cancelled",
+//       ];
+
+//       if (!validStatuses.includes(status)) {
+//         res.status(400);
+//         throw new Error("Invalid status");
+//       }
+
+//       order.status = status;
+
+//       if (riderId && mongoose.Types.ObjectId.isValid(riderId)) {
+//         order.riderId = riderId;
+//       } else if (isRiderAcceptingFirstTime) {
+//         order.riderId = new Types.ObjectId(req.user.id);
+//       }
+
+//       // Fix: Add missing restaurantId to items
+//       order.items = order.items.map((item) => ({
+//         ...item,
+//         restaurantId: item.restaurantId || order.restaurantId[0],
+//       }));
+
+//       if (!order.contactNumber) {
+//         order.contactNumber = "N/A";
+//       }
+
+//       const payload = {
+//         orderId: order._id,
+//         status: order.status,
+//         restaurant: order.restaurantId,
+//         riderId: order.riderId,
+//       };
+
+//       const eventMap = {
+//         pending: "orderPending",
+//         accepted: "orderAccepted",
+//         preparing: "orderPreparing",
+//         assigned: "orderAssigned",
+//         "out-for-delivery": "orderOutForDelivery",
+//         delivered: "orderDelivered",
+//         cancelled: "orderCancelled",
+//       };
+
+//       const eventName = eventMap[status];
+
+//       // Global Events
+//       io.emit(eventName, payload);
+
+//       // Emit to user
+//       io.to(`user_${order.userId}`).emit(eventName, { orderId: order._id, status });
+
+//       // Emit to restaurant(s)
+//       (Array.isArray(order.restaurantId)
+//         ? order.restaurantId
+//         : [order.restaurantId]
+//       ).forEach((resId) => {
+//         io.to(`restaurant_${resId}`).emit(eventName, {
+//           orderId: order._id,
+//           status,
+//         });
+//       });
+
+//       // Emit to rider if assigned
+//       if (order.riderId) {
+//         io.to(`rider_${order.riderId}`).emit(eventName, {
+//           orderId: order._id,
+//           status,
+//         });
+//       }
+
+//       await order.save();
+//       sendSuccessResponse(res, 200, "Status updated", order);
+//     } else {
+//       res.status(403);
+//       throw new Error("Not authorized to update this order");
+//     }
+//   } catch (error:unknown) {
+//     console.error("Update status error:", error.message);
+//     res.status(500).json({
+//       success: false,
+//       message: error.message || "Server Error",
+//     });
+//   }
+// });
+
+
+
+
+export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res) => {
   try {
     const order = await Order.findById(req.params.id);
     if (!order) {
@@ -271,28 +405,49 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
       throw new Error("Order not found");
     }
 
-    const currentUser = await User.findById(req.user.id);
+    const userId = req.user.id || req.user._id;
+    const currentUser = await User.findById(userId);
     if (!currentUser) {
       res.status(403);
       throw new Error("Not authorized");
     }
 
-    const isRestaurant = Array.isArray(order.restaurantId)
-      ? order.restaurantId.some((id) => id.equals(currentUser.OWN_Restaurant))
-      : order.restaurantId === currentUser.OWN_Restaurant;
+    // LOG: Debug role and restaurant
+    console.log("CurrentUser:", currentUser.role, currentUser.OWN_Restaurant);
 
+    // Check if current user is a restaurant
+    const isRestaurant = Array.isArray(order.restaurantId)
+      ? order.restaurantId.some((id) =>
+          id.toString() === currentUser.OWN_Restaurant?.toString()
+        )
+      : order.restaurantId.toString() === currentUser.OWN_Restaurant?.toString();
+
+    // Check if rider is already assigned or accepting first time
     const isRiderAlreadyAssigned =
-      order.riderId && order.riderId.equals(req.user.id);
+      order.riderId && order.riderId.toString() === userId?.toString();
 
     const isRiderAcceptingFirstTime =
       !order.riderId && req.user.role === "rider";
 
     const isRider = isRiderAlreadyAssigned || isRiderAcceptingFirstTime;
 
+    console.log("isRestaurant:", isRestaurant, "isRider:", isRider, "role:", req.user.role);
+
+
+
     const isAdmin = req.user.role === "admin";
 
     if (isRestaurant || isRider || isAdmin) {
       const { status, riderId } = req.body;
+      
+      const isAvailable = await Rider.findOne({ userId: userId, $or: [{ status: "available" }, { status: "busy" }] });
+
+      if(!isAvailable){
+        sendErrorResponse(res, 400, "Rider please go to online then accept order");
+        throw new Error("Rider please go to online then accept order");
+      }
+
+
       const validStatuses = [
         "pending",
         "accepted",
@@ -310,16 +465,15 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
 
       order.status = status;
 
-      if (riderId && mongoose.Types.ObjectId.isValid(riderId)) {
+      if (riderId && Types.ObjectId.isValid(riderId)) {
         order.riderId = riderId;
       } else if (isRiderAcceptingFirstTime) {
-        order.riderId = new Types.ObjectId(req.user.id);
+        order.riderId = new Types.ObjectId(userId);
       }
 
-      // Fix: Add missing restaurantId to items
       order.items = order.items.map((item) => ({
         ...item,
-        restaurantId: item.restaurantId || order.restaurantId[0],
+        restaurantId: item.restaurantId || (Array.isArray(order.restaurantId) ? order.restaurantId[0] : order.restaurantId),
       }));
 
       if (!order.contactNumber) {
@@ -329,11 +483,18 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
       const payload = {
         orderId: order._id,
         status: order.status,
-        restaurant: order.restaurantId,
-        riderId: order.riderId,
       };
 
-      const eventMap = {
+      type OrderStatus =
+        | "pending"
+        | "accepted"
+        | "preparing"
+        | "assigned"
+        | "out-for-delivery"
+        | "delivered"
+        | "cancelled";
+
+      const eventMap: Record<OrderStatus, string> = {
         pending: "orderPending",
         accepted: "orderAccepted",
         preparing: "orderPreparing",
@@ -343,40 +504,40 @@ export const updateOrderStatus = asyncHandler(async (req, res) => {
         cancelled: "orderCancelled",
       };
 
-      const eventName = eventMap[status];
+      if (!validStatuses.includes(status)) {
+        res.status(400);
+        throw new Error("Invalid status");
+      }
 
-      // Global Events
-      io.emit(eventName, payload);
+      // Tell TypeScript status is of type OrderStatus
+      const eventName = eventMap[status as OrderStatus];
 
-      // Emit to user
-      io.to(`user_${order.userId}`).emit(eventName, { orderId: order._id, status });
-
-      // Emit to restaurant(s)
-      (Array.isArray(order.restaurantId)
-        ? order.restaurantId
-        : [order.restaurantId]
-      ).forEach((resId) => {
-        io.to(`restaurant_${resId}`).emit(eventName, {
-          orderId: order._id,
-          status,
-        });
-      });
-
-      // Emit to rider if assigned
+      // Send notifications to specific user, restaurant(s), and rider
+      io.to(`user_${order.userId}`).emit(eventName, payload);
+      (Array.isArray(order.restaurantId) ? order.restaurantId : [order.restaurantId]).forEach(
+        (resId) => {
+          io.to(`restaurant_${resId}`).emit(eventName, payload);
+        }
+      );
       if (order.riderId) {
-        io.to(`rider_${order.riderId}`).emit(eventName, {
-          orderId: order._id,
-          status,
-        });
+        io.to(`rider_${order.riderId}`).emit(eventName, payload);
       }
 
       await order.save();
       sendSuccessResponse(res, 200, "Status updated", order);
+      return;
     } else {
+      console.log("Unauthorized access: ", {
+        userRole: req.user.role,
+        restaurantMatch: isRestaurant,
+        riderMatch: isRider,
+        admin: isAdmin,
+      });
+
       res.status(403);
       throw new Error("Not authorized to update this order");
     }
-  } catch (error:unknown) {
+  } catch (error: any) {
     console.error("Update status error:", error.message);
     res.status(500).json({
       success: false,
@@ -396,6 +557,8 @@ export const availableOrders = asyncHandler(async (req, res) => {
   })
     .populate("restaurantId", "name") // Populate restaurantId with the name field
     .exec(); // Execute the query
+
+    console.log(orders);
 
   res.status(200).json(
     orders.map((order) => ({
@@ -470,6 +633,7 @@ export const getPaidOrders = asyncHandler(async (req: AuthRequest, res: Response
   const orders = await Order.find({
     restaurantId: user.OWN_Restaurant,
     paymentStatus: "paid",
+    riderId: null,
   });
 
   if (!orders.length) {

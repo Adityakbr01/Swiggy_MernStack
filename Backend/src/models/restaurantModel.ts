@@ -84,6 +84,7 @@ const restaurantSchema = new Schema<IRestaurant>(
       type: Boolean,
       default: true,
     },
+    deliveryFee: { type: Number, default: 0 },
     deliveryTime: { type: Number, default: 30 },
     rating: { type: Number, default: 0 },
     orders: [

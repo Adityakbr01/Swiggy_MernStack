@@ -1,4 +1,3 @@
-// routes/restaurantRouter.js
 import express from "express";
 import { 
   createRestaurant, 
@@ -13,8 +12,11 @@ import {
   getNearbyRestaurants,
   getMenus,
   getAllMenus,
-  getDashboardSummary
+  getDashboardSummary,
+  searchFoodItems,
+  searchRestaurants
 } from "@controllers/restaurantController";
+
 import { protect, restrictTo } from "@middlewares/authMiddleware";
 import { restaurantValidator, menuItemValidator, parseAddressMiddleware } from "@utils/express_validator";
 import { handleValidationErrors } from "@middlewares/handleValidationErrors";
@@ -26,11 +28,12 @@ const restaurantRouter = express.Router();
 restaurantRouter.get("/nearby", protect, getNearbyRestaurants);
 restaurantRouter.get("/", getRestaurants); // All restaurants list
 restaurantRouter.get("/dashboard/summary", protect, restrictTo("restaurant", "admin"), getDashboardSummary);
-restaurantRouter.get("/menus", protect,restrictTo("admin", "restaurant"), getAllMenus);
+restaurantRouter.get("/menus", protect, restrictTo("admin", "restaurant"), getAllMenus);
 restaurantRouter.get("/:id", getRestaurantById); // Single restaurant details
+restaurantRouter.get("/search/food", searchFoodItems); // Search menu items across restaurants
+restaurantRouter.get("/search/restaurants", searchRestaurants); // Search restaurants
 
 // Protected routes (restaurant owner only)
-
 restaurantRouter.post(
   "/", 
   protect, 
@@ -87,9 +90,5 @@ restaurantRouter.put(
   updateMenuItem
 );
 restaurantRouter.delete("/:id/menu/:itemId", protect, restrictTo("restaurant"), deleteMenuItem);
-
-
-
-
 
 export default restaurantRouter;

@@ -848,3 +848,149 @@ export const getDashboardSummary = async (
   }
 };
 
+
+
+
+// Search and filter menu items across all restaurants
+export const searchFoodItems = async (req: Request, res: Response) => {
+  try {
+    const {
+      q = "", // Search query
+      category = "All", // Category filter
+      minPrice = 0, // Minimum price
+      maxPrice = 100, // Maximum price
+      vegetarian = false, // Vegetarian filter (assuming category-based for now)
+      sortBy = "relevance", // Sort option
+    } = req.query;
+
+    // Build aggregation pipeline
+    const pipeline: any[] = [
+      // Unwind menu array to query individual menu items
+      { $unwind: "$menu" },
+      // Match stage for filtering
+      {
+        $match: {
+          // Search query
+          ...(q && {
+            $or: [
+              { "menu.itemName": { $regex: q as string, $options: "i" } },
+              { "menu.description": { $regex: q as string, $options: "i" } },
+              { name: { $regex: q as string, $options: "i" } },
+            ],
+          }),
+          // Category filter
+          ...(category !== "All" && { "menu.category": category }),
+          // Price range filter
+          "menu.price": { $gte: Number(minPrice), $lte: Number(maxPrice) },
+          // Vegetarian filter (assuming vegetarian categories like "Salad" or "Dessert")
+          ...(vegetarian === "true" && {
+            "menu.category": { $in: ["Salad", "Dessert"] }, // Add more categories as needed
+          }),
+        },
+      },
+      // Project relevant fields
+      {
+        $project: {
+          id: "$menu._id",
+          name: "$menu.itemName",
+          description: "$menu.description",
+          price: "$menu.price",
+          image: "$menu.imageUrl",
+          category: "$menu.category",
+          restaurant: "$name",
+          rating: "$rating",
+          deliveryTime: "$deliveryTime",
+          vegetarian: {
+            $in: ["$menu.category", ["Salad", "Dessert"]], // Adjust as per your logic
+          },
+        },
+      },
+    ];
+
+    // Add sort stage
+    switch (sortBy) {
+      case "price-low":
+        pipeline.push({ $sort: { price: 1 } });
+        break;
+      case "price-high":
+        pipeline.push({ $sort: { price: -1 } });
+        break;
+      case "rating":
+        pipeline.push({ $sort: { rating: -1 } });
+        break;
+      default:
+        // Relevance: no specific sort
+        break;
+    }
+
+    // Execute aggregation
+    const foodItems = await Restaurant.aggregate(pipeline);
+
+    res.status(200).json({
+      status: "success",
+      results: foodItems.length,
+      data: foodItems,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch menu items",
+      error: error.message,
+    });
+  }
+};
+
+// Search and filter restaurants
+export const searchRestaurants = async (req: Request, res: Response) => {
+  try {
+    const {
+      q = "", // Search query
+      category = "All", // Category filter (based on cuisines)
+      sortBy = "relevance", // Sort option
+    } = req.query;
+
+    // Build query
+    let query: any = {};
+
+    // Apply search query
+    if (q) {
+      query.$or = [
+        { name: { $regex: q as string, $options: "i" } },
+        { cuisines: { $regex: q as string, $options: "i" } },
+      ];
+    }
+
+    // Apply category filter (match with cuisines)
+    if (category !== "All") {
+      query.cuisines = { $regex: category as string, $options: "i" };
+    }
+
+    // Build sort options
+    let sortOptions: any = {};
+    switch (sortBy) {
+      case "rating":
+        sortOptions.rating = -1;
+        break;
+      default:
+        // Relevance: no specific sort
+        break;
+    }
+
+    // Fetch restaurants
+    const restaurants = await Restaurant.find(query)
+      .sort(sortOptions)
+      .select("name restaurantImage cuisines rating deliveryTime deliveryFee deliveryFee location");
+
+    res.status(200).json({
+      status: "success",
+      results: restaurants.length,
+      data: restaurants,
+    });
+  } catch (error: any) {
+    res.status(500).json({
+      status: "error",
+      message: "Failed to fetch restaurants",
+      error: error.message,
+    });
+  }
+};
