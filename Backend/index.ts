@@ -9,10 +9,13 @@ dotenv.config();
 const PORT = process.env.PORT || 4000;
 const server = http.createServer(app);
 
+if(!process.env.CORS_ORIGIN) {
+  throw new Error('CORS_ORIGIN is not defined');
+}
 
 export const io = new Server(server, {
     cors: {
-      origin: '*',
+      origin: process.env.CORS_ORIGIN,
       methods: ['GET', 'POST', 'PUT', 'DELETE'],
       credentials: true,
     },
