@@ -48,6 +48,7 @@ export const createOrder = asyncHandler(
       price: item.price,
       quantity: item.quantity,
       restaurantId: item.restaurantId, // Include restaurantId
+  
     }));
 
     // Create a single order
@@ -63,6 +64,8 @@ export const createOrder = asyncHandler(
       notes: req.body.notes,
       orderType: req.body.orderType,
       contactNumber: req.body.contactNumber,
+      deliveryTime: req.body.deliveryTime,
+      deliveryFee: req.body.deliveryfee
     });
 
     // Add order to each restaurant's orders array
@@ -399,7 +402,10 @@ export const getUserOrders = asyncHandler(async (req, res) => {
 
 export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res) => {
   try {
+    console.log(req.params.id)
     const order = await Order.findById(req.params.id);
+
+
     if (!order) {
       res.status(404);
       throw new Error("Order not found");
@@ -440,14 +446,15 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res) => {
     if (isRestaurant || isRider || isAdmin) {
       const { status, riderId } = req.body;
       
-      const isAvailable = await Rider.findOne({ userId: userId, $or: [{ status: "available" }, { status: "busy" }] });
+    if (req.user.role === "rider") {
+      const isAvailable = await User.findById(req.user.id).select("isAvailable");
 
       if(!isAvailable){
         sendErrorResponse(res, 400, "Rider please go to online then accept order");
         throw new Error("Rider please go to online then accept order");
       }
 
-
+    }
       const validStatuses = [
         "pending",
         "accepted",
@@ -575,9 +582,6 @@ export const availableOrders = asyncHandler(async (req, res) => {
 
   
 
-
-
-
 // @desc Cancel order
 // @route DELETE /api/v1/orders/:id
 // @access Private
@@ -592,8 +596,6 @@ export const cancelOrder = asyncHandler(async (req, res) => {
     throw new Error("Not authorized or order cannot be cancelled");
   }
 });
-
-
 
 
 // @desc Get all orders for a restaurant

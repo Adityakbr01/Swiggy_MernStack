@@ -30,7 +30,7 @@ export interface IOrder extends Document {
   contactNumber: string;
   createdAt: Date;
   updatedAt: Date;
-  deliveryFee: number;
+  deliveryFee?: number;
 }
 
 const orderItemSchema = new Schema<IOrderItem>({
@@ -86,6 +86,11 @@ const orderSchema = new Schema<IOrder>(
     contactNumber: {
       type: String,
       required: true,
+    },
+    deliveryFee: {
+      required: false,
+      type: Number,
+      default: 20,
     },
   },
   { timestamps: true }

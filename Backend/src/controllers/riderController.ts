@@ -276,124 +276,330 @@ export const updateOrderStatus = asyncHandler(async (req: AuthRequest, res: Resp
 });
 
 // Controller to fetch rider dashboard summary
-export const getRiderDashboardSummary = async (req: AuthRequest, res: Response): Promise<void> => {
-  try {
-    if (!req.user) {
-      res.status(401).json({ success: false, message: "Unauthorized: Please log in as a rider" });
-      return;
-    }
+// export const getRiderDashboardSummary = async (req: AuthRequest, res: Response): Promise<void> => {
+//   try {
+//     if (!req.user) {
+//       res.status(401).json({ success: false, message: "Unauthorized: Please log in as a rider" });
+//       return;
+//     }
 
-    const riderId = new Types.ObjectId(req.user.id);
-    const user = await User.findById(riderId).select("name riderDetails").lean();
-    if (!user) {
-      res.status(404).json({ success: false, message: "Rider not found" });
-      return;
-    }
+//     const riderId = new Types.ObjectId(req.user.id);
+//     const user = await User.findById(riderId).select("name riderDetails").lean();
+//     if (!user) {
+//       res.status(404).json({ success: false, message: "Rider not found" });
+//       return;
+//     }
 
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+//     const today = new Date();
+//     today.setHours(0, 0, 0, 0);
 
-    // Aggregation for metrics
-    const metrics = await Order.aggregate<{
-      todayDeliveries: number;
-      pendingDeliveries: number;
-      totalEarnings: number;
-      activeOrders: number;
-    }>([
-      { $match: { riderId, status: { $in: ["ready", "picked", "delivered"] } } },
-      {
-        $group: {
-          _id: null,
-          todayDeliveries: {
-            $sum: {
-              $cond: [{ $and: [{ $eq: ["$status", "delivered"] }, { $gte: ["$createdAt", today] }] }, 1, 0],
-            },
-          },
-          pendingDeliveries: {
-            $sum: { $cond: [{ $in: ["$status", ["ready", "picked"]] }, 1, 0] },
-          },
-          totalEarnings: {
-            $sum: { $cond: [{ $eq: ["$status", "delivered"] }, "$deliveryFee", 0] },
-          },
-          activeOrders: {
-            $sum: { $cond: [{ $eq: ["$status", "picked"] }, 1, 0] },
-          },
-        },
-      },
-      { $project: { _id: 0, todayDeliveries: 1, pendingDeliveries: 1, totalEarnings: 1, activeOrders: 1 } },
-    ]);
+//     // Aggregation for metrics
+//     const metrics = await Order.aggregate<{
+//       todayDeliveries: number;
+//       pendingDeliveries: number;
+//       totalEarnings: number;
+//       activeOrders: number;
+//     }>([
+//       { $match: { riderId, status: { $in: ["ready", "picked", "delivered"] } } },
+//       {
+//         $group: {
+//           _id: null,
+//           todayDeliveries: {
+//             $sum: {
+//               $cond: [{ $and: [{ $eq: ["$status", "delivered"] }, { $gte: ["$createdAt", today] }] }, 1, 0],
+//             },
+//           },
+//           pendingDeliveries: {
+//             $sum: { $cond: [{ $in: ["$status", ["ready", "picked"]] }, 1, 0] },
+//           },
+//           totalEarnings: {
+//             $sum: { $cond: [{ $eq: ["$status", "delivered"] }, "$deliveryFee", 0] },
+//           },
+//           activeOrders: {
+//             $sum: { $cond: [{ $eq: ["$status", "picked"] }, 1, 0] },
+//           },
+//         },
+//       },
+//       { $project: { _id: 0, todayDeliveries: 1, pendingDeliveries: 1, totalEarnings: 1, activeOrders: 1 } },
+//     ]);
 
-    // Aggregation for earnings trend
-    const earningsTrend = await Order.aggregate<{
+//     // Aggregation for earnings trend
+//     const earningsTrend = await Order.aggregate<{
+//       _id: string;
+//       earnings: number;
+//     }>([
+//       {
+//         $match: {
+//           riderId,
+//           status: "delivered",
+//           createdAt: { $gte: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000) },
+//         },
+//       },
+//       {
+//         $group: {
+//           _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+//           earnings: { $sum: "$deliveryFee" },
+//         },
+//       },
+//       { $sort: { _id: 1 } },
+//     ]);
+
+//     // Format earnings trend for 7 days
+//     const formattedTrend = Array.from({ length: 7 }, (_, i) => {
+//       const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+//       const dateStr = format(date, "yyyy-MM-dd");
+//       const trendEntry = earningsTrend.find((t) => t._id === dateStr);
+//       return { day: format(date, "EEE"), earnings: trendEntry ? trendEntry.earnings : 0 };
+//     }).reverse();
+
+//     // Fetch recent orders
+//     const recentOrders = await Order.find({ riderId, status: { $in: ["ready", "picked", "delivered"] } })
+//       .sort({ createdAt: -1 })
+//       .limit(5)
+//       .populate("restaurantId", "name")
+//       .lean()
+//       .then((orders) =>
+//         orders.map((order) => ({
+//           _id: order._id.toString(),
+//           restaurantName: (order.restaurantId as any)?.name || "Unknown Restaurant",
+//           totalAmount: order.totalAmount,
+//           deliveryFee: order.deliveryFee || 0,
+//           status: order.status,
+//           createdAt: order.createdAt.toISOString(),
+//           deliveryAddress: order.deliveryAddress || "N/A",
+//         }))
+//       );
+
+//     const metricsData = metrics[0] || {
+//       todayDeliveries: 0,
+//       pendingDeliveries: 0,
+//       totalEarnings: 0,
+//       activeOrders: 0,
+//     };
+
+//     const rider = await Rider.findOne({ userId: riderId }).select("status").lean();
+//     res.status(200).json({
+//       success: true,
+//       message: "Rider dashboard summary fetched successfully",
+//       data: {
+//         ...metricsData,
+//         riderName: user.name || "Rider",
+//         availability: rider?.status === "available",
+//         earningsTrend: formattedTrend,
+//         recentOrders,
+//       },
+//     });
+//   } catch (error) {
+//     console.error("Error fetching rider dashboard summary:", error);
+//     res.status(500).json({ success: false, message: "Server error while fetching dashboard summary" });
+//   }
+// };
+
+
+interface DashboardResponse {
+  success: boolean;
+  message: string;
+  data: {
+    riderName: string;
+    todayDeliveries: number;
+    pendingDeliveries: number;
+    totalEarnings: number;
+    activeOrders: number;
+    averageDeliveryTime: number;
+    availability: boolean;
+    earningsTrend: Array<{ day: string; earnings: number }>;
+    recentOrders: Array<{
       _id: string;
-      earnings: number;
-    }>([
-      {
-        $match: {
-          riderId,
-          status: "delivered",
-          createdAt: { $gte: new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000) },
-        },
-      },
-      {
-        $group: {
-          _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
-          earnings: { $sum: "$deliveryFee" },
-        },
-      },
-      { $sort: { _id: 1 } },
-    ]);
+      restaurantName: string;
+      totalAmount: number;
+      deliveryFee: number;
+      status: string;
+      createdAt: string;
+      deliveryAddress: string;
+    }>;
+  };
+}
 
-    // Format earnings trend for 7 days
-    const formattedTrend = Array.from({ length: 7 }, (_, i) => {
-      const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
-      const dateStr = format(date, "yyyy-MM-dd");
-      const trendEntry = earningsTrend.find((t) => t._id === dateStr);
-      return { day: format(date, "EEE"), earnings: trendEntry ? trendEntry.earnings : 0 };
-    }).reverse();
-
-    // Fetch recent orders
-    const recentOrders = await Order.find({ riderId, status: { $in: ["ready", "picked", "delivered"] } })
-      .sort({ createdAt: -1 })
-      .limit(5)
-      .populate("restaurantId", "name")
-      .lean()
-      .then((orders) =>
-        orders.map((order) => ({
-          _id: order._id.toString(),
-          restaurantName: (order.restaurantId as any)?.name || "Unknown Restaurant",
-          totalAmount: order.totalAmount,
-          deliveryFee: order.deliveryFee || 0,
-          status: order.status,
-          createdAt: order.createdAt.toISOString(),
-          deliveryAddress: order.deliveryAddress || "N/A",
-        }))
-      );
-
-    const metricsData = metrics[0] || {
-      todayDeliveries: 0,
-      pendingDeliveries: 0,
-      totalEarnings: 0,
-      activeOrders: 0,
-    };
-
-    const rider = await Rider.findOne({ userId: riderId }).select("status").lean();
-    res.status(200).json({
-      success: true,
-      message: "Rider dashboard summary fetched successfully",
-      data: {
-        ...metricsData,
-        riderName: user.name || "Rider",
-        availability: rider?.status === "available",
-        earningsTrend: formattedTrend,
-        recentOrders,
-      },
-    });
-  } catch (error) {
-    console.error("Error fetching rider dashboard summary:", error);
-    res.status(500).json({ success: false, message: "Server error while fetching dashboard summary" });
+export const getRiderDashboardSummary = asyncHandler(async (req: AuthRequest, res: Response): Promise<void> => {
+  // Validate user authentication and role
+  if (!req.user || req.user.role !== "rider") {
+    res.status(401).json({ success: false, message: "Unauthorized: Please log in as a rider" });
+    return;
   }
-};
+
+  const riderId = new Types.ObjectId(req.user.id);
+  const isDelivered = req.query.isDelivered === "true";
+
+  // Fetch user data
+  const user = await User.findById(riderId).select("name").lean();
+  if (!user) {
+    res.status(404).json({ success: false, message: "Rider not found" });
+    return;
+  }
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+
+  // Aggregation for metrics
+  const metrics = await Order.aggregate([
+    {
+      $match: {
+        riderId,
+        status: { $in: ["assigned", "accepted", "out-for-delivery", "delivered"] },
+      },
+    },
+    {
+      $group: {
+        _id: null,
+        todayDeliveries: {
+          $sum: {
+            $cond: [
+              {
+                $and: [
+                  { $eq: ["$status", "delivered"] },
+                  { $gte: ["$createdAt", today] },
+                ],
+              },
+              1,
+              0,
+            ],
+          },
+        },
+        pendingDeliveries: {
+          $sum: {
+            $cond: [{ $in: ["$status", ["assigned", "accepted", "out-for-delivery"]] }, 1, 0],
+          },
+        },
+        totalEarnings: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "delivered"] }, { $ifNull: ["$deliveryFee", 0] }, 0],
+          },
+        },
+        activeOrders: {
+          $sum: {
+            $cond: [{ $eq: ["$status", "out-for-delivery"] }, 1, 0],
+          },
+        },
+        deliveryTimes: {
+          $push: {
+            $cond: [
+              { $eq: ["$status", "delivered"] },
+              {
+                $divide: [
+                  { $subtract: ["$updatedAt", "$createdAt"] },
+                  1000 * 60, // Convert to minutes
+                ],
+              },
+              0,
+            ],
+          },
+        },
+      },
+    },
+    {
+      $project: {
+        _id: 0,
+        todayDeliveries: 1,
+        pendingDeliveries: 1,
+        totalEarnings: 1,
+        activeOrders: 1,
+        averageDeliveryTime: {
+          $cond: [
+            { $gt: [{ $size: "$deliveryTimes" }, 0] },
+            { $avg: "$deliveryTimes" },
+            0,
+          ],
+        },
+      },
+    },
+  ]);
+
+  // Aggregation for earnings trend (last 7 days)
+  const sevenDaysAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+  const earningsTrend = await Order.aggregate([
+    {
+      $match: {
+        riderId,
+        status: "delivered",
+        createdAt: { $gte: sevenDaysAgo },
+      },
+    },
+    {
+      $group: {
+        _id: { $dateToString: { format: "%Y-%m-%d", date: "$createdAt" } },
+        earnings: { $sum: { $ifNull: ["$deliveryFee", 0] } },
+      },
+    },
+    { $sort: { _id: 1 } },
+  ]);
+
+  logger.info(`Raw earnings trend for rider ${riderId}: ${JSON.stringify(earningsTrend)}`);
+
+  // Format earnings trend
+  const formattedTrend = Array.from({ length: 7 }, (_, i) => {
+    const date = new Date(today.getTime() - i * 24 * 60 * 60 * 1000);
+    const dateStr = format(date, "yyyy-MM-dd");
+    const trendEntry = earningsTrend.find((t) => t._id === dateStr);
+    return { day: format(date, "EEE"), earnings: trendEntry ? trendEntry.earnings : 0 };
+  }).reverse();
+
+  // Fetch recent orders based on isDelivered
+  const orderStatuses = isDelivered ? ["delivered"] : ["assigned", "accepted", "out-for-delivery"];
+  const recentOrders = await Order.find({
+    riderId,
+    status: { $in: orderStatuses },
+  })
+    .sort({ createdAt: -1 })
+    .limit(5)
+    .populate("restaurantId", "name")
+    .populate("userId", "name phone_number")
+    .lean()
+    .then((orders) =>
+      orders.map((order) => ({
+        _id: order._id.toString(),
+        restaurantName: (order.restaurantId as any)?.name || "Unknown Restaurant",
+        restaurantAddress: order.deliveryAddress
+          ? `${order.deliveryAddress.street}, ${order.deliveryAddress.city}`
+          : "N/A",
+        customerName: (order.userId as any)?.name || "Unknown Customer",
+        customerPhone: (order.userId as any)?.phone_number || "N/A",
+        totalAmount: order.totalAmount || 0,
+        deliveryFee: order.deliveryFee || 0,
+        status: order.status,
+        createdAt: order.createdAt.toISOString(),
+        deliveryAddress: order.deliveryAddress || { street: "N/A", city: "N/A", pincode: "N/A", coordinates: { lat: 0, lng: 0 } },
+      }))
+    );
+
+  // Fetch rider availability
+  const rider = await Rider.findOne({ userId: riderId }).select("status").lean();
+  if (!rider) {
+    res.status(404).json({ success: false, message: "Rider profile not found" });
+    return;
+  }
+
+  const metricsData = metrics[0] || {
+    todayDeliveries: 0,
+    pendingDeliveries: 0,
+    totalEarnings: 0,
+    activeOrders: 0,
+    averageDeliveryTime: 0,
+  };
+
+  logger.info(`Fetched summary for rider ${riderId}: ${JSON.stringify(metricsData)}`);
+
+  res.status(200).json({
+    success: true,
+    message: "Rider dashboard summary fetched successfully",
+    data: {
+      riderName: user.name || "Rider",
+      ...metricsData,
+      availability: rider.status === "available",
+      earningsTrend: formattedTrend,
+      recentOrders,
+    },
+  });
+});
 
 // Update rider availability
 export const availability = asyncHandler(async (req: AuthRequest, res: Response) => {
@@ -476,7 +682,7 @@ export const availability = asyncHandler(async (req: AuthRequest, res: Response)
 
 // Get all orders for rider (fixed and improved)
 export const getAllOrdersForRider = asyncHandler(async (req: AuthRequest, res: Response) => {
-  const riderUserId = req.user?.id;
+  const riderUserId = req.user?.id || req.user?._id;
 
   if (!riderUserId) {
     sendErrorResponse(res, 401, "Unauthorized: Rider ID not found");
