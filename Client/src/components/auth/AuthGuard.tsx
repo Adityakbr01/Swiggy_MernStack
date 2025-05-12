@@ -1,5 +1,4 @@
-// src/components/AuthGuard.tsx
-import { useEffect, useMemo } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate, Location } from "react-router-dom";
 import { ROUTES, CUSTOMER_ROUTES, RESTRICTED_ROLES_FOR_CUSTOMER_ROUTES } from "@/utils/routesConfig";
 import { matchRoute } from "@/utils/matchRoute";
@@ -18,6 +17,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation() as CustomLocation;
   const navigate = useNavigate();
   const { user, isLoading } = useUser();
+  const hasNavigated = useRef(false); // Track navigation to prevent loops
 
   if (process.env.NODE_ENV !== "production") {
     console.log("AuthGuard Debug:", {
@@ -51,8 +51,11 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
       {
         condition: !user && location.pathname !== ROUTES.LOGIN && location.pathname !== ROUTES.REGISTER && !isLoading,
         action: () => {
-          toast.error("Please login first.");
-          navigate(ROUTES.LOGIN, { state: { from: location.pathname } });
+          if (!hasNavigated.current) {
+            hasNavigated.current = true;
+            toast.error("Please login first.");
+            navigate(ROUTES.LOGIN, { state: { from: location.pathname } });
+          }
         },
       },
       // Check 2: Restrict customer-only routes
@@ -63,13 +66,16 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           user.role &&
           RESTRICTED_ROLES_FOR_CUSTOMER_ROUTES.includes(user.role),
         action: () => {
-          toast.error("Access denied: Customers only.");
-          if (user?.role === "rider") {
-            navigate("/rider/dashboard");
-          } else if (user?.role === "restaurant") {
-            navigate("/restaurant/dashboard");
-          } else {
-            navigate(ROUTES.HOME); // Fallback for unexpected roles
+          if (!hasNavigated.current) {
+            hasNavigated.current = true;
+            toast.error("Access denied: Customers only.");
+            if (user?.role === "rider") {
+              navigate("/rider/dashboard", { replace: true });
+            } else if (user?.role === "restaurant") {
+              navigate("/restaurant/dashboard", { replace: true });
+            } else {
+              navigate(ROUTES.HOME, { replace: true });
+            }
           }
         },
       },
@@ -79,20 +85,21 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           user &&
           ["/auth/Login", "/auth/Register"].includes(location.pathname),
         action: () => {
-          const getRedirectPath = (role: string | null) => {
-            switch (role) {
-              case "rider":
-                return "/rider/dashboard";
-              case "restaurant":
-                return "/restaurant/dashboard";
-              case "customer":
-                return ROUTES.HOME;
-              default:
-                return ROUTES.HOME;
-            }
-          };
-          const from = location.state?.from || user?.role && getRedirectPath(user?.role);
-          if(from){
+          if (!hasNavigated.current) {
+            hasNavigated.current = true;
+            const getRedirectPath = (role: string | null | undefined) => {
+              switch (role) {
+                case "rider":
+                  return "/rider/dashboard";
+                case "restaurant":
+                  return "/restaurant/dashboard";
+                case "customer":
+                  return ROUTES.HOME;
+                default:
+                  return ROUTES.HOME; // Handles null or undefined
+              }
+            };
+            const from = location.state?.from || getRedirectPath(user?.role) || ROUTES.HOME; // Fallback to ROUTES.HOME
             navigate(from, { replace: true });
           }
         },
@@ -104,8 +111,11 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           user &&
           user.role !== "rider",
         action: () => {
-          toast.error("Access denied: Rider role required.");
-          navigate(ROUTES.HOME);
+          if (!hasNavigated.current) {
+            hasNavigated.current = true;
+            toast.error("Access denied: Rider role required.");
+            navigate(ROUTES.HOME, { replace: true });
+          }
         },
       },
       // Check 5: Restrict restaurant-only routes
@@ -115,20 +125,26 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           user &&
           user.role !== "restaurant",
         action: () => {
-          toast.error("Access denied: Restaurant role required.");
-          navigate(ROUTES.HOME);
+          if (!hasNavigated.current) {
+            hasNavigated.current = true;
+            toast.error("Access denied: Restaurant role required.");
+            navigate(ROUTES.HOME, { replace: true });
+          }
         },
       },
       // Check 6: Handle generic /dashboard redirect
       {
         condition: location.pathname === "/dashboard" && user,
         action: () => {
-          if (user?.role === "rider") {
-            navigate("/rider/dashboard");
-          } else if (user?.role === "restaurant") {
-            navigate("/restaurant/dashboard");
-          } else {
-            navigate(ROUTES.HOME);
+          if (!hasNavigated.current) {
+            hasNavigated.current = true;
+            if (user?.role === "rider") {
+              navigate("/rider/dashboard", { replace: true });
+            } else if (user?.role === "restaurant") {
+              navigate("/restaurant/dashboard", { replace: true });
+            } else {
+              navigate(ROUTES.HOME, { replace: true });
+            }
           }
         },
       },
@@ -137,6 +153,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (isLoading) return;
+    hasNavigated.current = false; // Reset navigation flag on new route or user change
     for (let check of checks) {
       if (check.condition) {
         check.action();
