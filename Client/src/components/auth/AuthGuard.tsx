@@ -74,7 +74,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
             } else if (user?.role === "restaurant") {
               navigate("/restaurant/dashboard", { replace: true });
             } else {
-              navigate(ROUTES.HOME, { replace: true });
+              // navigate(ROUTES.HOME, { replace: true });
             }
           }
         },
