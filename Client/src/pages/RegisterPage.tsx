@@ -15,7 +15,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { useUser } from "@/hooks/useUser";
 import { useRegisterMutation } from "@/redux/services/authApi";
+import { RoleType } from "@/types/types";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useEffect, useState } from "react";
@@ -82,6 +84,14 @@ const RegisterPage = () => {
     useState(false);
   const navigate = useNavigate();
 
+
+
+  const { user } = useUser();
+  if (user) {
+    navigate("/");
+  }
+
+
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -119,7 +129,7 @@ const RegisterPage = () => {
 
     setLocationLoading(true);
     try {
-      const position = await new Promise((resolve, reject) => {
+      const position = await new Promise<GeolocationPosition>((resolve, reject) => {
         navigator.geolocation.getCurrentPosition(resolve, reject, {
           enableHighAccuracy: true,
           timeout: 5000,
@@ -135,7 +145,7 @@ const RegisterPage = () => {
       onChange(newAddress);
       setLocationPermissionDenied(false);
       return true;
-    } catch (error) {
+    } catch (error: any) {
       if (error.code === 1) {
         toast.error(
           "Location access denied. Please enable location access in your browser settings."
@@ -203,7 +213,7 @@ const RegisterPage = () => {
 
     try {
       setLoading(true);
-      const roleMap = {
+      const roleMap: Record<RoleType, string> = {
         customer: "customer",
         restaurant: "restaurant",
         rider: "rider",
@@ -211,7 +221,7 @@ const RegisterPage = () => {
 
       const formData = {
         ...values,
-        role: roleMap[values.role],
+        role: roleMap[values.role as RoleType],
         address: JSON.stringify(values.address),
       };
 
@@ -229,7 +239,7 @@ const RegisterPage = () => {
       }
       toast.success("Registration successful!");
       navigate("/auth/Login");
-    } catch (error) {
+    } catch (error: any) {
       if (error?.data?.errors) {
         error.data.errors.forEach((err: any) => {
           if (err.path) {
@@ -475,7 +485,7 @@ const RegisterPage = () => {
                 <FormField
                   control={form.control}
                   name="address"
-                  render={({ field: { value, onChange, ...field } }) => (
+                  render={({ field: { value, onChange } }) => (
                     <FormItem>
                       {value.map((address, index) => (
                         <div key={index} className="space-y-3">

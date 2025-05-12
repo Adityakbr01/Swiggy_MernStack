@@ -1,20 +1,20 @@
 
 import {
-    AlertDialog,
-    AlertDialogAction,
-    AlertDialogContent,
-    AlertDialogDescription,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogTitle
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import {
-    useDeleteMenuItemMutation,
-    useDeleteRestaurantMutation,
-    useGetRestaurantByIdQuery,
-    useUpdateRestaurantMutation
+  useDeleteMenuItemMutation,
+  useDeleteRestaurantMutation,
+  useGetRestaurantByIdQuery,
+  useUpdateRestaurantMutation
 } from "@/redux/services/restaurantApi";
 import { RootState } from "@/redux/store";
 import { AnimatePresence, motion } from "framer-motion";
@@ -24,44 +24,8 @@ import { useSelector } from "react-redux";
 import { Link } from "react-router-dom";
 import { toast } from "sonner";
 
-// Define Types
-interface MenuItem {
-  _id: string;
-  itemName: string;
-  price: number;
-  description: string;
-  category: string;
-}
 
-interface Location {
-  coordinates: {
-    type: "Point";
-    coordinates: [number, number];
-  };
-  street: string;
-  city: string;
-  state: string;
-  country: string;
-  pincode: string;
-}
 
-interface Restaurant {
-  _id: string;
-  ownerId: string;
-  name: string;
-  location: Location;
-  menu: MenuItem[];
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
-  restaurantImage?: string;
-}
-
-interface ApiResponse {
-  success: boolean;
-  message: string;
-  data: Restaurant;
-}
 
 const RestaurantSetting = () => {
   const { user } = useSelector((state: RootState) => state.auth);
@@ -236,7 +200,7 @@ const RestaurantSetting = () => {
             {restaurant?.name}
           </h1>
           <div className="flex items-center gap-4">
-            <Link to="/dashboard/update-restaurant">
+            <Link to="/restaurant/dashboard/update-restaurant">
               <Button className="bg-rose-400/30 border border-red-300 text-rose-900 px-6 py-2 rounded-md hover:bg-rose-400/50 transition flex items-center gap-2">
                 <Edit className="w-5 h-5" />
                 <span>Edit Restaurant</span>

@@ -60,3 +60,6 @@ export interface DeliveryAddress {
         };
       }
       
+
+
+     export type RoleType = "customer" | "restaurant" | "rider";

@@ -89,7 +89,7 @@ const AddRestaurant = () => {
     );
   }, []);
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setRestaurant((prev) => ({
       ...prev,
@@ -101,7 +101,7 @@ const AddRestaurant = () => {
     }));
   };
 
-  const handleCuisineChange = (cuisine) => {
+  const handleCuisineChange = (cuisine: string) => {
     setRestaurant((prev) => ({
       ...prev,
       cuisines: prev.cuisines.includes(cuisine)
@@ -110,7 +110,7 @@ const AddRestaurant = () => {
     }));
   };
 
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
@@ -130,7 +130,7 @@ const AddRestaurant = () => {
     }
   };
 
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!user) {
       toast.error("Please log in to add a restaurant!");
@@ -185,7 +185,7 @@ const AddRestaurant = () => {
         restaurantImage: null,
       });
       navigate("/restaurant/dashboard/settings", { replace: true });
-    } catch (err) {
+    } catch (err :any) {
       const errorMessage =
         err?.message || err?.error || err?.data?.message || "Failed to add restaurant. Please try again.";
       toast.error(errorMessage);

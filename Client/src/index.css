@@ -287,3 +287,39 @@
   top: 40%;
   right: 20%;
 }
+
+
+.swiper-button-prev,
+.swiper-button-next {
+ display: none;
+}
+
+.swiper-button-prev:hover,
+.swiper-button-next:hover {
+  background: rgba(255, 255, 255, 1);
+}
+
+/* Default bullets */
+.swiper-pagination-bullet {
+  width: 10px;
+  height: 10px;
+  background: #d1d5db; /* Gray-300 */
+  border-radius: 50%;
+  margin: 0 6px;
+  transition: all 0.3s ease-in-out;
+  opacity: 0.7;
+}
+
+/* Active bullet */
+.swiper-pagination-bullet-active {
+  width: 20px;
+  height: 10px;
+  border-radius: 5px;
+  background: #f97316; /* Orange-500 */
+  opacity: 1;
+  box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
+}
+
+.custom-cursor-emoji {
+  cursor: url('https://twemoji.maxcdn.com/v/latest/72x72/1f355.png'), auto;
+}

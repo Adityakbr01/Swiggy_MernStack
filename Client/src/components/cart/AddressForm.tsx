@@ -1,5 +1,5 @@
 import { Button } from '@/components/ui/button'; // Adjust path as needed
-import { OrderData } from '@/pages/CartPage';
+import { OrderData } from '@/types/types';
 import { motion } from 'framer-motion';
 import { MapPin } from 'lucide-react';
 

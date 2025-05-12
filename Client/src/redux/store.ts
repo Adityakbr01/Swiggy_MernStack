@@ -26,7 +26,7 @@ export const store = configureStore({
 
 const initialiseApp = async () => {
   try {
-    const result = await store.dispatch(
+  await store.dispatch(
       authApi.endpoints.getUser.initiate()
     ).unwrap();
   } catch (error) {

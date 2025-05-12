@@ -1,13 +1,21 @@
 import HeroSection from "@/components/hero-section"
+import Footer from "@/components/Layout/Footer"
 import NearbyRestaurants from "@/components/NearbyRestaurants"
 import PopularDishesNearYou from "@/components/PopularDishesNearYou"
+import TestimonialsSection from "@/components/Sections/TestimonialsSection"
+import TopCuisinesSection from "@/components/Sections/TopCuisinesSection"
+import WhyChooseUsSection from "@/components/Sections/WhyChooseUsSection"
 
 function HomePage() {
   return (
     <div>
-      <HeroSection/>
-      <NearbyRestaurants/>
-      <PopularDishesNearYou/>
+      <HeroSection />
+      <NearbyRestaurants />
+      <PopularDishesNearYou />
+      <TestimonialsSection />
+      <WhyChooseUsSection />
+      <TopCuisinesSection />
+      <Footer />
     </div>
   )
 }

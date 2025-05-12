@@ -44,7 +44,7 @@ const AvailableOrders = () => {
   const { user } = useSelector((state: RootState) => state.auth) as {
     user: User | null;
   };
-  const [acceptOrder,{isLoading: isAccepting}] = useUpdateOrderStatusMutation();
+  const [acceptOrder] = useUpdateOrderStatusMutation();
 
   // Handle accepting an order
   const handleAcceptOrder = async (orderId: string) => {

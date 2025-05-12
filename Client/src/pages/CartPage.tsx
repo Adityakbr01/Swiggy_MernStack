@@ -1,23 +1,22 @@
 
 
+import AddressForm from "@/components/cart/AddressForm";
+import CartItems from "@/components/cart/CartItems";
+import OrderConfirmation from "@/components/cart/OrderConfirmation";
+import OrderReview from "@/components/cart/OrderReview";
+import PaymentForm from "@/components/cart/PaymentForm";
 import { Button } from "@/components/ui/button";
-import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft } from "lucide-react";
-import { Link } from "react-router-dom";
-import React, { useState } from "react";
-import { useDispatch, useSelector } from "react-redux";
-import Confetti from 'react-dom-confetti';
+import { clearCart } from "@/redux/feature/cartSlice";
 import { useCreateOrderMutation } from "@/redux/services/orderApi";
 import { useCreatePaymentMutation, useVerifyPaymentMutation } from "@/redux/services/paymentApi";
-import { toast } from "sonner";
 import { loadRazorpayScript } from "@/utils/loadRazorpay";
-import { useNavigate } from 'react-router-dom';
-import { clearCart } from "@/redux/feature/cartSlice";
-import CartItems from "@/components/cart/CartItems";
-import AddressForm from "@/components/cart/AddressForm";
-import PaymentForm from "@/components/cart/PaymentForm";
-import OrderReview from "@/components/cart/OrderReview";
-import OrderConfirmation from "@/components/cart/OrderConfirmation";
+import { AnimatePresence, motion } from "framer-motion";
+import { ArrowLeft } from "lucide-react";
+import React, { useState } from "react";
+import Confetti from 'react-dom-confetti';
+import { useDispatch, useSelector } from "react-redux";
+import { Link } from "react-router-dom";
+import { toast } from "sonner";
 
 // Define interfaces (same as original)
 interface CartItem {
@@ -80,7 +79,6 @@ export default function CartPage() {
   const [createOrder] = useCreateOrderMutation();
   const [createPayment] = useCreatePaymentMutation();
   const [verifyPayment] = useVerifyPaymentMutation();
-  const router = useNavigate();
 
   const initialUser = user || { address: [], phone_number: '' };
   const initialAddress = initialUser.address?.[0] || {
@@ -187,7 +185,7 @@ export default function CartPage() {
           handler: async function (response: any) {
             const { razorpay_payment_id, razorpay_order_id, razorpay_signature } = response;
             try {
-              const { data } = await verifyPayment({
+                await verifyPayment({
                 orderId,
                 razorpayPaymentId: razorpay_payment_id,
                 razorpayOrderId: razorpay_order_id,
@@ -196,7 +194,7 @@ export default function CartPage() {
               toast.success("Payment Successful ✅");
               setTimeout(() => {
                 setIsAnimating(false);
-              }, 3000);
+              }, 500);
               setOrderPlaced(true);
               setCheckoutStep('review');
               dispatch(clearCart());

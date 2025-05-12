@@ -1,5 +1,5 @@
 
-import React, { useState } from "react";
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -35,16 +35,19 @@ const AddMenuItem = () => {
   const [addMenuItem, { isLoading }] = useAddMenuItemMutation();
 
   // Handle text input change
-  const handleChange = (e) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setMenuItem((prev) => ({
       ...prev,
       [name]: value,
     }));
   };
+  
 
   // Handle file input change
-  const handleFileChange = (e) => {
+  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (files && files.length > 0) {
       const file = files[0];
@@ -60,7 +63,7 @@ const AddMenuItem = () => {
   };
 
   // Handle form submission
-  const handleSubmit = async (e) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!user?.OWN_Restaurant) {
@@ -88,7 +91,7 @@ const AddMenuItem = () => {
         itemImage: null,
       });
       navigate("/restaurant/dashboard/settings");
-    } catch (err) {
+    } catch (err:any) {
       const errorMessage =
         err?.message || err?.error || err?.data?.message || "Failed to add menu item. Please try again.";
       toast.error(errorMessage);

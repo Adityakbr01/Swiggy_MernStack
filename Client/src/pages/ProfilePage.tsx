@@ -1,24 +1,25 @@
 import { Button } from "@/components/ui/button";
 import {
-    Card,
-    CardContent,
-    CardDescription,
-    CardFooter,
-    CardHeader,
-    CardTitle,
+  Card,
+  CardContent,
+  CardDescription,
+  CardFooter,
+  CardHeader,
+  CardTitle,
 } from "@/components/ui/card";
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { logout } from "@/redux/feature/authSlice";
 import { useLogoutMutation, useUpdateProfileMutation } from "@/redux/services/authApi";
 import { RootState } from "@/redux/store";
+import { ROUTES } from "@/utils/routesConfig";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { motion } from "framer-motion";
 import { ArrowLeft, Camera, Edit2, Loader2, Mail, Phone, Power, Save, User, X } from "lucide-react";
@@ -34,12 +35,12 @@ const formSchema = z.object({
   email: z.string().email("Invalid email address"),
   phone: z.string().min(10, "Phone must be at least 10 digits"),
   bio: z.string().max(200, "Bio must be less than 200 characters").optional(),
+  profileImage: z.any().optional(),
 });
 
 // Simple ProtectedRoute wrapper for React
 const ProtectedRoute: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const { user } = useSelector((state: RootState) => state.auth);
-  const navigate = useNavigate();
 
   
 
@@ -64,6 +65,7 @@ const ProfilePage: React.FC = () => {
       name: user?.name || "",
       email: user?.email || "",
       phone: user?.phone_number || "",
+      profileImage: user?.profileImage || "",
     },
   });
 
@@ -145,7 +147,7 @@ const ProfilePage: React.FC = () => {
       dispatch(logout());
       localStorage.removeItem("Food-App-user");
       toast.success("Logged out successfully");
-      navigate("/login");
+      navigate(ROUTES.LOGIN);
     } catch (error) {
       console.error("Logout error:", error);
       toast.error("Failed to logout. Please try again.");

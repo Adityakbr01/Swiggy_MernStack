@@ -1,8 +1,7 @@
-import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
-import { RootState } from "@/redux/store";
 import { RootUrl } from "@/utils/_Constant";
-import { use } from "react";
+import { createApi, fetchBaseQuery } from "@reduxjs/toolkit/query/react";
 
+// Interfaces
 interface RiderOrdersResponse {
   success: boolean;
   message: string;
@@ -25,6 +24,7 @@ interface RiderOrdersResponse {
       total: number;
       totalPages: number;
     };
+    status: string;
   };
 }
 
@@ -34,6 +34,7 @@ interface ApiResponse<T> {
   data: T;
 }
 
+// Create API
 export const riderApi = createApi({
   reducerPath: "riderApi",
   baseQuery: fetchBaseQuery({
@@ -41,7 +42,16 @@ export const riderApi = createApi({
     credentials: "include",
   }),
   endpoints: (builder) => ({
-    getRiderSummary: builder.query<any, void>({ query: () => "/dashboard" }),
+    // Rider dashboard summary
+    getRiderSummary: builder.query<any, { isDelivered: boolean }>({
+      query: ({ isDelivered }) => {
+        const params = new URLSearchParams();
+        params.set("isDelivered", isDelivered.toString());
+        return `/dashboard?${params.toString()}`;
+      },
+    }),
+
+    // Update order status
     updateOrderStatus: builder.mutation<
       void,
       { orderId: string; status: string }
@@ -52,6 +62,8 @@ export const riderApi = createApi({
         body: { status },
       }),
     }),
+
+    // Update rider availability
     updateAvailability: builder.mutation<void, { availability: boolean }>({
       query: (body) => ({
         url: "/availability",
@@ -59,13 +71,24 @@ export const riderApi = createApi({
         body,
       }),
     }),
+
+    // ✅ Enhanced getAllOrdersForRider with filters and pagination
     getAllOrdersForRider: builder.query<
       RiderOrdersResponse,
-      { page: number; limit: number }
+      { page: number; limit: number; status?: string; dateFrom?: string; dateTo?: string }
     >({
-      query: ({ page, limit }) => `/orders?page=${page}&limit=${limit}`,
+      query: ({ page, limit, status, dateFrom, dateTo }) => {
+        const params = new URLSearchParams();
+        params.set("page", page.toString());
+        params.set("limit", limit.toString());
+        if (status) params.set("status", status);
+        if (dateFrom) params.set("dateFrom", dateFrom);
+        if (dateTo) params.set("dateTo", dateTo);
+        return `/Allorders?${params.toString()}`;
+      },
     }),
-    // Accept an order (rider)
+
+    // Accept an order
     acceptOrder: builder.mutation<
       ApiResponse<{ orderId: string; status: string }>,
       { orderId: string }
@@ -75,34 +98,34 @@ export const riderApi = createApi({
         method: "POST",
       }),
     }),
-      // Get available riders (restaurant/admin)
-      getAvailableRiders: builder.query<ApiResponse<any[]>, void>({
-        query: () => ({
-          url: "/available",
-          method: "GET",
-        }),
+
+    // Get available riders
+    getAvailableRiders: builder.query<ApiResponse<any[]>, void>({
+      query: () => ({
+        url: "/available",
+        method: "GET",
       }),
-      // availableOrders: builder.query({
-      //   query: () => ({
-      //     url: `/availableOrders`,
-      //     method: "GET",
-      //   })
-      // }),
-      AllordersForRider: builder.query({
-        query: () => ({
-          url: `/Allorders`,
-          method: "GET",
-        })
+    }),
+
+    // All orders for a rider
+    AllordersForRiderOnly: builder.query({
+      query: () => ({
+        url: `/Allorders`,
+        method: "GET",
       }),
-      availableorders: builder.query({
-        query: () => ({
-          url: `/available-orders`,
-          method: "GET",
-        })
-      })
+    }),
+
+    // Available orders (unassigned)
+    availableorders: builder.query({
+      query: () => ({
+        url: `/available-orders`,
+        method: "GET",
+      }),
+    }),
   }),
 });
 
+// Hooks
 export const {
   useGetRiderSummaryQuery,
   useUpdateOrderStatusMutation,
@@ -110,6 +133,6 @@ export const {
   useGetAllOrdersForRiderQuery,
   useAcceptOrderMutation,
   useGetAvailableRidersQuery,
-  useAllordersForRiderQuery,
-useAvailableordersQuery
+  useAllordersForRiderOnlyQuery,
+  useAvailableordersQuery,
 } = riderApi;

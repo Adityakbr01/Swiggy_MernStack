@@ -1,4 +1,4 @@
-import { Home, List, Package, Settings, Truck, Utensils } from "lucide-react";
+import { Home, Settings, Truck, Utensils } from "lucide-react";
 import { Link, useLocation } from "react-router-dom";
 
 // Restaurant-specific menu items

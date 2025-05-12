@@ -1,19 +1,21 @@
-
+// src/pages/LoginPage.tsx
 import { Button } from "@/components/ui/button";
 import {
-    Form,
-    FormControl,
-    FormField,
-    FormItem,
-    FormLabel,
-    FormMessage,
+  Form,
+  FormControl,
+  FormField,
+  FormItem,
+  FormLabel,
+  FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { useLoginMutation } from "@/redux/services/authApi";
+import { setCredentials } from "@/redux/feature/authSlice"; // Use setCredentials
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Loader2 } from "lucide-react";
 import { useState } from "react";
 import { useForm } from "react-hook-form";
+import { useDispatch } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -27,6 +29,7 @@ const LoginPage = () => {
   const [loading, setLoading] = useState(false);
   const [login] = useLoginMutation();
   const navigate = useNavigate();
+  const dispatch = useDispatch();
 
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -36,26 +39,39 @@ const LoginPage = () => {
     },
   });
 
-  const onSubmit = async (values:any) => {
+  const onSubmit = async (values: any) => {
     try {
       setLoading(true);
       const response = await login(values).unwrap();
 
       if (response?.data) {
-        localStorage.setItem(
-          "Food-App-user",
-          JSON.stringify({
-            fullName: response.data.user.name,
-            email: response.data.user.email,
-            isAuthenticated: true,
-            role: response.data.user.role,
-          })
-        );
-      }
+        // Prepare data for Redux and localStorage
+        const authData = {
+          data: {
+            user: {
+              id: response.data.user.id,
+              name: response.data.user.name,
+              email: response.data.user.email,
+              role: response.data.user.role,
+              phone_number: response.data.user.phone_number || "",
+              profileImage: response.data.user.profileImage || "",
+              OWN_Restaurant: response.data.user.OWN_Restaurant || undefined,
+            },
+          },
+          token: response.token, // Ensure token is included
+        };
 
-      toast.success("Login successful!");
-      navigate("/");
-    } catch (error) {
+        // Update Redux state
+        dispatch(setCredentials(authData));
+
+        // Store in localStorage for useUser compatibility
+        localStorage.setItem("Food-App-user", JSON.stringify(authData.data.user));
+
+        toast.success("Login successful!");
+        // Let AuthGuard handle navigation
+        navigate("/auth/Login", { replace: true }); // Trigger AuthGuard redirect
+      }
+    } catch (error: any) {
       toast.error(error?.data?.message || "Login failed");
     } finally {
       setLoading(false);
@@ -83,7 +99,13 @@ const LoginPage = () => {
           <div className="space-y-4">
             <div className="flex items-center">
               <div className="bg-orange-100 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-orange-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -91,7 +113,13 @@ const LoginPage = () => {
             </div>
             <div className="flex items-center">
               <div className="bg-orange-100 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-orange-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>
@@ -99,7 +127,13 @@ const LoginPage = () => {
             </div>
             <div className="flex items-center">
               <div className="bg-orange-100 p-2 rounded-full mr-4">
-                <svg xmlns="http://www.w3.org/2000/svg" className="h-6 w-6 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  className="h-6 w-6 text-orange-500"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  stroke="currentColor"
+                >
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                 </svg>
               </div>

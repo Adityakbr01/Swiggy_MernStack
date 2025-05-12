@@ -22,32 +22,6 @@ interface DeliveryAddress {
   coordinates: { lat: number; lng: number };
 }
 
-interface RecentOrder {
-  _id: string;
-  restaurantName: string;
-  totalAmount: number;
-  deliveryFee: number;
-  status: string;
-  createdAt: string;
-  deliveryAddress: DeliveryAddress; // Updated from string to object
-}
-
-interface RiderDashboardSummary {
-  todayDeliveries: number;
-  pendingDeliveries: number;
-  totalEarnings: number;
-  activeOrders: number;
-  riderName: string;
-  availability: boolean;
-  earningsTrend: Array<{ day: string; earnings: number }>;
-  recentOrders: RecentOrder[];
-}
-
-interface SummaryResponse {
-  success: boolean;
-  message: string;
-  data: RiderDashboardSummary;
-}
 
 interface User {
   id: string;
@@ -56,7 +30,7 @@ interface User {
 
 const RiderDashboard = () => {
   const { user } = useSelector((state: RootState) => state.auth) as { user: User | null };
-  const { data, isLoading, error, refetch } = useGetRiderSummaryQuery(undefined);
+  const { data, isLoading, error, refetch } = useGetRiderSummaryQuery({isDelivered: true});
 
   // Debug data
   useEffect(() => {

@@ -3,7 +3,7 @@ import { Home } from "lucide-react";
 import { Link } from "react-router-dom";
 
 // Modern Custom Button Component
-const CustomButton = ({ to, children }) => (
+const CustomButton = ({ to, children }: { to: string; children: React.ReactNode }) => (
   <Link to={to}>
     <motion.button
       whileHover={{ scale: 1.05 }}
