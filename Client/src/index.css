@@ -341,9 +341,3 @@
   opacity: 1;
   box-shadow: 0 0 8px rgba(249, 115, 22, 0.5);
 }
-
-.custom-cursor-emoji {
-  cursor: url('https://twemoji.maxcdn.com/v/latest/72x72/1f355.png'), auto;
-}
-
-

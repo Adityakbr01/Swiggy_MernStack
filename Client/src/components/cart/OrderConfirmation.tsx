@@ -33,7 +33,7 @@ const OrderConfirmation: React.FC<OrderConfirmationProps> = ({ setOrderPlaced, s
         </div>
         <h2 className="text-2xl font-bold mb-2">Order Placed Successfully!</h2>
         <p className="text-gray-600 mb-4">Your order has been confirmed</p>
-        <Button onClick={() => {
+        <Button className="text-white" onClick={() => {
           setOrderPlaced(false);
           setCheckoutStep('cart');
         }}>

@@ -13,7 +13,7 @@ export default function HeroSection() {
       {!loaded && <HeroSkeleton />}
 
       <section
-        className={`bg-gradient-to-b from-white to-gray-50 py-20 px-4 sm:px-6 lg:px-8 relative overflow-hidden transition-opacity duration-500 ${
+        className={`bg-gradient-to-b from-white to-gray-50 py-28 px-4 sm:px-6 lg:px-8 relative overflow-hidden transition-opacity duration-500 ${
           loaded ? "opacity-100" : "opacity-0 absolute -z-10"
         }`}
       >

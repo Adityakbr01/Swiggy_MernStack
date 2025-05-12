@@ -112,7 +112,7 @@ const CartItems: React.FC<CartItemsProps> = ({ items, totalPrice, formatPrice, s
             <span className="text-xl font-bold">₹{formatPrice(totalPrice)}</span>
           </div>
           <Button
-            className="w-full mt-4"
+            className="w-full mt-4 text-white"
             onClick={() => setCheckoutStep('address')}
           >
             Proceed to Checkout

@@ -119,7 +119,7 @@ const AddressForm = ({ formData, handleInputChange, setCheckoutStep }:AddressFor
         </div>
       </div>
 
-      <div className="flex justify-between mt-6">
+      <div className="flex justify-between mt-6 text-white">
         <Button variant="outline" onClick={() => setCheckoutStep('cart')}>
           Back
         </Button>

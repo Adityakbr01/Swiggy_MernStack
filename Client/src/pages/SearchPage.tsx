@@ -137,7 +137,7 @@ const SearchPage: React.FC = () => {
 
   return (
     <Suspense>
-      <div className="min-h-screen flex flex-col pb-16 md:pb-0">
+      <div className="min-h-screen flex flex-col py-20 md:pb-0">
         <header className="sticky top-0 bg-background z-10 border-b">
           <div className="container flex items-center h-16 px-4">
             <Button variant="ghost" size="icon" className="mr-2" onClick={() => navigate("/")}>
@@ -185,7 +185,7 @@ const SearchPage: React.FC = () => {
                         <Button
                           key={category.id}
                           variant={selectedCategory === category.name ? "default" : "outline"}
-                          className={`justify-start`}
+                          className={`justify-start ${selectedCategory === category.name ? "text-white" : ""}`}
                           onClick={() => setSelectedCategory(category.name)}
                         >
                           <span className="mr-2">{category.icon}</span>
@@ -246,7 +246,7 @@ const SearchPage: React.FC = () => {
                 </div>
                 <SheetFooter>
                   <Button variant="outline" onClick={resetFilters}>Reset Filters</Button>
-                  <Button onClick={() => setIsFilterOpen(false)}>Apply Filters</Button>
+                  <Button className="text-white" onClick={() => setIsFilterOpen(false)}>Apply Filters</Button>
                 </SheetFooter>
               </SheetContent>
             </Sheet>

@@ -87,11 +87,11 @@ const OrderReview: React.FC<OrderReviewProps> = ({
           <span>₹{formatPrice(totalPrice)}</span>
         </div>
       </div>
-      <div className="flex justify-between mt-6">
+      <div className="flex justify-between mt-6 ">
         <Button variant="outline" onClick={() => setCheckoutStep("payment")}>
           Back
         </Button>
-        <Button onClick={handleOrder}>Place Order</Button>
+        <Button className="text-white" onClick={handleOrder}>Place Order</Button>
       </div>
     </motion.div>
   );

@@ -116,7 +116,7 @@ export function MenuSection({ title, items }: MenuSectionProps) {
                   size="icon"
                   className="absolute -bottom-3 left-1/2 -translate-x-1/2 h-6 w-6 rounded-full"
                 >
-                  <Plus className="h-4 w-4" />
+                  <Plus className="h-4 w-4 " color="#fff" />
                 </Button>
               </motion.div>
             </div>

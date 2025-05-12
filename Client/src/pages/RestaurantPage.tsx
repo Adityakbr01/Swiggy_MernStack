@@ -157,7 +157,7 @@ const RestaurantPage = () => {
         animate={{ y: 0 }}
         transition={{ type: 'spring', stiffness: 300, damping: 30, delay: 0.5 }}
       >
-        <Button onClick={() => navigate('/cart')} className="w-full">
+        <Button onClick={() => navigate('/cart')} className="w-full text-white">
           View Cart • ₹{totalAmount}
         </Button>
       </motion.div>

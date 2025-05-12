@@ -83,11 +83,11 @@ const PaymentForm: React.FC<PaymentFormProps> = ({ formData, handleInputChange, 
           <span className="text-lg font-medium">Total:</span>
           <span className="text-xl font-bold">₹{formatPrice(totalPrice)}</span>
         </div>
-        <div className="flex justify-between">
+        <div className="flex justify-between ">
           <Button variant="outline" onClick={() => setCheckoutStep('address')}>
             Back
           </Button>
-          <Button onClick={() => setCheckoutStep('review')}>
+          <Button className="text-white" onClick={() => setCheckoutStep('review')}>
             Review Order
           </Button>
         </div>

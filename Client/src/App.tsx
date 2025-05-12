@@ -51,8 +51,9 @@ function AppWrapper() {
   return (
     <>
     {/* ✅ DESKTOP NAVBAR (only large screen) */}
-    {!shouldHideNavbar && <DesktopNavbar />}
+
     <AuthGuard>
+          {!shouldHideNavbar && <DesktopNavbar />}
       <Routes>
         {/* access only customer */}
         <Route path="/" element={<Main />} />
