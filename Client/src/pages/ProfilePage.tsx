@@ -16,8 +16,9 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { logout } from "@/redux/feature/authSlice";
-import { useLogoutMutation, useUpdateProfileMutation } from "@/redux/services/authApi";
+// import { logout } from "@/redux/feature/authSlice";
+import Cookies from "js-cookie"; 
+import { useUpdateProfileMutation } from "@/redux/services/authApi";
 import { RootState } from "@/redux/store";
 import { ROUTES } from "@/utils/routesConfig";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -25,7 +26,7 @@ import { motion } from "framer-motion";
 import { ArrowLeft, Camera, Edit2, Loader2, Mail, Phone, Power, Save, User, X } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useForm } from "react-hook-form";
-import { useDispatch, useSelector } from "react-redux";
+import { useSelector } from "react-redux";
 import { Link, useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import * as z from "zod";
@@ -53,11 +54,11 @@ const ProfilePage: React.FC = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const navigate = useNavigate();
-  const dispatch = useDispatch();
+  // const dispatch = useDispatch();
 
   // RTK Query hooks
   const [updateProfile] = useUpdateProfileMutation();
-  const [logoutMutation] = useLogoutMutation();
+  // const [logoutMutation] = useLogoutMutation();
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -143,8 +144,8 @@ const ProfilePage: React.FC = () => {
 
   const handleLogout = async () => {
     try {
-      await logoutMutation().unwrap();
-      dispatch(logout());
+ 
+      Cookies.remove("token");
       localStorage.removeItem("Food-App-user");
       toast.success("Logged out successfully");
       navigate(ROUTES.LOGIN);
