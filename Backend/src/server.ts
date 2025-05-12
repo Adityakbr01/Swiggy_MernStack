@@ -9,6 +9,7 @@ import restaurantRouter from "./routes/restaurantRouter";
 import orderRouter from "./routes/orderRouter";
 import paymentRouter from "./routes/paymentRouter";
 import riderRouter from "./routes/riderRouter";
+import { exit } from "process";
 
 const app = express();
 
@@ -37,10 +38,13 @@ app.use(express.json({limit: '24kb'})); // Parse JSON request body
 app.use(express.urlencoded({ extended: true, limit: '24kb' })); // Parse URL-encoded data
 app.use(cookieParser()); // Parse Cookie header and populate req.cookies
 
+if(!process.env.CORS_ORIGIN) {
+  throw new Error("CORS_ORIGIN environment variable is not set");
+}
 
 // CORS with proper configuration
 app.use(cors({
-    origin: process.env.CORS_ORIGIN || "*",
+    origin: process.env.CORS_ORIGIN,
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
     maxAge: 86400 // Cache preflight requests for 1 day (in seconds)
