@@ -5,8 +5,8 @@
   "private": true,
   "scripts": {
     "start": "bun run index.ts",
-    "dev": "bun --watch run index.ts",
-    "build": "bun build index.ts --outdir dist --target=node --external=mock-aws-s3 --external=aws-sdk --external=nock"
+    "dev": "bun run dist/index.js",
+    "build": "bun install && bun build index.ts --outdir dist --target=node --external=mock-aws-s3 --external=aws-sdk --external=nock"
   },
   "devDependencies": {
     "@types/bcrypt": "^5.0.2",
