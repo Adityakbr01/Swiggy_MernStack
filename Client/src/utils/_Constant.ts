@@ -1,1 +1,1 @@
- export const RootUrl = "http://localhost:5000/api/v1"
+ export const RootUrl = "https://swiggy-mernstack.onrender.com/api/v1"
