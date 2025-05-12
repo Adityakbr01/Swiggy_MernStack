@@ -83,7 +83,7 @@ const PopularDishesNearYou: React.FC = () => {
             {Array.from({ length: 4 }).map((_, index) => (
               <SwiperSlide key={index}>
                 <div className="w-80 mx-auto">
-                  <Card className="overflow-hidden border-none shadow-lg bg-white rounded-xl">
+                  <Card className="overflow-hidden py-0 border-none shadow-lg bg-white rounded-xl">
                     <Skeleton className="h-52 w-full bg-gray-200" />
                     <CardContent className="p-5 space-y-3">
                       <Skeleton className="h-5 w-3/4 bg-gray-200" />

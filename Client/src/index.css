@@ -91,8 +91,17 @@
   --popover-foreground: oklch(0.145 0 0);
   --primary: oklch(0.205 0 0);
   --primary-foreground: oklch(0.985 0 0);
+  --primaryy: 0 100% 65%; /* #FF4D4D (food red) */
   --secondary: oklch(0.97 0 0);
   --secondary-foreground: oklch(0.205 0 0);
+
+    --primaryy: 0 100% 65%; /* #FF4D4D (food red) */
+  --primary-foreground: 211 100% 99%;
+  --secondaryy: 42 100% 50%; /* #FFB800 (warm yellow) */
+  --secondary-foreground: 24 9.8% 10%;
+  --accentt: 123 54% 49%; /* #4CAF50 (fresh green) */
+  --accent-foreground: 24 9.8% 10%;
+  
   --muted: oklch(0.97 0 0);
   --muted-foreground: oklch(0.556 0 0);
   --accent: oklch(0.97 0 0);
@@ -222,6 +231,19 @@
 }
 
 
+/* Custom classes for colored backgrounds and text */
+.bg-primary\/10 { background-color: hsla(var(--primaryy) / 0.1); }
+.bg-secondary\/10 { background-color: hsla(var(--secondaryy) / 0.1); }
+.bg-accent\/10 { background-color: hsla(var(--accentt) / 0.1); }
+.bg-primary\/5 { background-color: hsla(var(--primaryy) / 0.05); }
+.text-primary\/30 { color: hsla(var(--primaryy) / 0.3); }
+.text-primary { color: hsl(var(--primaryy)); }
+.text-secondary { color: hsl(var(--secondaryy)); }
+.text-accent { color: hsl(var(--accentt)); }
+.border-primary { border-color: hsl(var(--primaryy)); }
+.border-secondary { border-color: hsl(var(--secondaryy)); }
+.border-accent { border-color: hsl(var(--accentt)); }
+
 
 .shape4 {
   position: absolute;
@@ -323,3 +345,5 @@
 .custom-cursor-emoji {
   cursor: url('https://twemoji.maxcdn.com/v/latest/72x72/1f355.png'), auto;
 }
+
+

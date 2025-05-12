@@ -83,7 +83,7 @@ const NearbyRestaurants: React.FC = () => {
             {Array.from({ length: 4 }).map((_, index) => (
               <SwiperSlide key={index}>
                 <div className="w-72 mx-auto">
-                  <Card className="overflow-hidden border-none shadow-md bg-white rounded-2xl">
+                  <Card className="overflow-hidden border-none pt-0 shadow-md bg-white rounded-2xl">
                     <Skeleton className="h-48 w-full bg-gray-200" />
                     <CardContent className="p-5 space-y-4">
                       <Skeleton className="h-6 w-3/4 bg-gray-200 rounded-md" />
@@ -153,7 +153,7 @@ const NearbyRestaurants: React.FC = () => {
                     whileTap={{ scale: 0.98 }}
                   >
                     <Card
-                      className="overflow-hidden pt-0 border-none shadow-md hover:shadow-lg transition-all duration-300 bg-white rounded-2xl cursor-pointer"
+                      className="overflow-hidden py-0 border-none shadow-md hover:shadow-lg transition-all duration-300 bg-white rounded-2xl cursor-pointer"
                       onClick={() => navigate(`/restaurant/${restaurant._id}`)}
                       role="button"
                       tabIndex={0}

@@ -1,0 +1,19 @@
+.container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 100vh;
+  padding: 20px;
+  background-color: #F5F5F5;
+  transition: background-color 0.3s ease;
+}
+
+.container.dark {
+  background-color: #2D3748;
+}
+
+svg {
+  max-width: 400px;
+  width: 100%;
+  height: auto;
+}

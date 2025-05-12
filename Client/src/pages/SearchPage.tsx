@@ -185,7 +185,7 @@ const SearchPage: React.FC = () => {
                         <Button
                           key={category.id}
                           variant={selectedCategory === category.name ? "default" : "outline"}
-                          className="justify-start"
+                          className={`justify-start`}
                           onClick={() => setSelectedCategory(category.name)}
                         >
                           <span className="mr-2">{category.icon}</span>
@@ -255,14 +255,14 @@ const SearchPage: React.FC = () => {
 
         <main className="flex-1 container px-4 py-6">
           <div className="mb-6 overflow-x-auto scrollbar-hide pb-2">
-            <div className="flex space-x-2">
+            <div className="flex space-x-2 py-2 ml-1.5">
               {categories.map((category) => (
                 <motion.button
                   key={category.id}
                   onClick={() => handleCategoryClick(category.name)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
+                  className={`flex cursor-pointer items-center gap-1.5 px-3 py-1.5 text-sm font-medium rounded-full whitespace-nowrap transition-colors ${
                     selectedCategory === category.name
-                      ? "bg-primary text-primary-foreground"
+                      ? "bg-primary text-white"
                       : "bg-muted hover:bg-muted/80"
                   }`}
                   whileHover={{ scale: 1.05 }}

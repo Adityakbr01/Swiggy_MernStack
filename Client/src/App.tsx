@@ -1,5 +1,5 @@
 import { MobileNavbar } from "@/components/Layout/MobileNavbar"; // 🟢 import your navbar
-import { Route, BrowserRouter as Router, Routes, useLocation } from "react-router-dom";
+import { Navigate, Route, BrowserRouter as Router, Routes, useLocation } from "react-router-dom";
 import "./App.css";
 import RestaurantLayout from "./components/Layout/RestaurantLayout";
 import RiderLayout from "./components/Layout/RiderLayout";
@@ -26,8 +26,6 @@ import ProfilePage from "./pages/ProfilePage";
 import AuthGuard from "./components/auth/AuthGuard";
 import UpdateRestaurant from "./pages/RestaurantDashboard/UpdateRestaurant";
 import Main from "./pages/Main";
-
-
 function AppWrapper() {
   const location = useLocation();
 
@@ -35,12 +33,15 @@ function AppWrapper() {
   const hideNavbarRoutes = [
     "/auth/login",
     "/auth/register",
+    "/404",  // 404 page ko hideNavbarRoutes mein add kiya
+    "/*"
   ];
 
   // ❌ Prefixes jahan navbar nahi chahiye
   const hideNavbarPrefixes = [
     "/restaurant",
-    "/rider"
+    "/rider",
+    "/*"
   ];
 
   const shouldHideNavbar =
@@ -86,7 +87,11 @@ function AppWrapper() {
           <Route path="settings" element={<RiderSettings />} />
         </Route>
 
-        <Route path="*" element={<NotFoundPage />} />
+       {/* 404 Route */}
+          <Route path="/404" element={<NotFoundPage />} />
+
+          {/* Catch all route for unmatched paths */}
+          <Route path="*" element={<Navigate to="/404" />} />
       </Routes>
       </AuthGuard>
       {/* ✅ Show navbar conditionally */}
