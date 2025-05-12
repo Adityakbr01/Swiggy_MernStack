@@ -34,14 +34,7 @@ export const authApi = createApi({
   
   baseQuery: fetchBaseQuery({ 
     baseUrl: `${RootUrl}/users`,
-    credentials: 'include',
-    prepareHeaders: (headers, { getState }) => {
-      const token = (getState() as any).auth.token;
-      if (token) {
-        headers.set('authorization', `Bearer ${token}`);
-      }
-      return headers;
-    },
+    credentials: "include"
   }),
   tagTypes: ['Profile'],
   endpoints: (builder) => ({
