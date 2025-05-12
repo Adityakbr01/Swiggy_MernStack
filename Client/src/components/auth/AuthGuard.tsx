@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef } from "react";
 import { useLocation, useNavigate, Location } from "react-router-dom";
-import { ROUTES, CUSTOMER_ROUTES, RESTRICTED_ROLES_FOR_CUSTOMER_ROUTES } from "@/utils/routesConfig";
+import { ROUTES } from "@/utils/routesConfig";
 import { matchRoute } from "@/utils/matchRoute";
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
@@ -17,7 +17,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
   const location = useLocation() as CustomLocation;
   const navigate = useNavigate();
   const { user, isLoading } = useUser();
-  const hasNavigated = useRef(false); // Track navigation to prevent loops
+  const hasNavigated = useRef(false);
 
   if (process.env.NODE_ENV !== "production") {
     console.log("AuthGuard Debug:", {
@@ -49,7 +49,11 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
     return [
       // Check 1: Redirect unauthenticated users to login
       {
-        condition: !user && location.pathname !== ROUTES.LOGIN && location.pathname !== ROUTES.REGISTER && !isLoading,
+        condition:
+          !user &&
+          location.pathname !== ROUTES.LOGIN &&
+          location.pathname !== ROUTES.REGISTER &&
+          !isLoading,
         action: () => {
           if (!hasNavigated.current) {
             hasNavigated.current = true;
@@ -58,28 +62,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           }
         },
       },
-      // Check 2: Restrict customer-only routes
-      {
-        condition:
-          matchRoute(CUSTOMER_ROUTES, location.pathname) &&
-          user &&
-          user.role &&
-          RESTRICTED_ROLES_FOR_CUSTOMER_ROUTES.includes(user.role),
-        action: () => {
-          if (!hasNavigated.current) {
-            hasNavigated.current = true;
-            toast.error("Access denied: Customers only.");
-            if (user?.role === "rider") {
-              navigate("/rider/dashboard", { replace: true });
-            } else if (user?.role === "restaurant") {
-              navigate("/restaurant/dashboard", { replace: true });
-            } else {
-              // navigate(ROUTES.HOME, { replace: true });
-            }
-          }
-        },
-      },
-      // Check 3: Redirect authenticated users from login/register
+      // Check 2: Redirect authenticated users from login/register
       {
         condition:
           user &&
@@ -99,12 +82,12 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
                   return ROUTES.HOME; // Handles null or undefined
               }
             };
-            const from = location.state?.from || getRedirectPath(user?.role); // Fallback to ROUTES.HOME
+            const from = location.state?.from || getRedirectPath(user?.role) || ROUTES.HOME;
             navigate(from, { replace: true });
           }
         },
       },
-      // Check 4: Restrict rider-only routes
+      // Check 3: Restrict rider-only routes
       {
         condition:
           matchRoute(RIDER_ROUTES, location.pathname) &&
@@ -118,7 +101,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           }
         },
       },
-      // Check 5: Restrict restaurant-only routes
+      // Check 4: Restrict restaurant-only routes
       {
         condition:
           matchRoute(RESTAURANT_ROUTES, location.pathname) &&
@@ -132,7 +115,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
           }
         },
       },
-      // Check 6: Handle generic /dashboard redirect
+      // Check 5: Handle generic /dashboard redirect
       {
         condition: location.pathname === "/dashboard" && user,
         action: () => {
@@ -153,7 +136,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
 
   useEffect(() => {
     if (isLoading) return;
-    hasNavigated.current = false; // Reset navigation flag on new route or user change
+    hasNavigated.current = false;
     for (let check of checks) {
       if (check.condition) {
         check.action();
