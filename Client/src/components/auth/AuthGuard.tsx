@@ -99,7 +99,7 @@ const AuthGuard = ({ children }: { children: React.ReactNode }) => {
                   return ROUTES.HOME; // Handles null or undefined
               }
             };
-            const from = location.state?.from || getRedirectPath(user?.role) || ROUTES.HOME; // Fallback to ROUTES.HOME
+            const from = location.state?.from || getRedirectPath(user?.role); // Fallback to ROUTES.HOME
             navigate(from, { replace: true });
           }
         },
