@@ -14,7 +14,6 @@ import Rider from "@/models/riderModel";
 // @route   POST /api/v1/users/register
 // @access  Public
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
-
     try {
         const { name, email, password, phone_number, role, address } = req.body;
         const profileImageUrl = req?.file?.path;
